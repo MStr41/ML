@@ -1,0 +1,7 @@
+Damit die Codes bei mir funktioniert, habe ich die so angepasst:
+
+1- Die Zeile "!pip install lenskit" gelöscht
+2- In der Zeile "recs = batch.recommend(fittable, users, 10)" "n_jobs = 1" hinzugefügt, da Multiprocessing bei mir nicht funktioniert hat.
+3- Dateipfad geändert
+4- Man kann in KNN-Dateien die Liste "k_values" verkleinern, wenn man keine Lust hat, lange zu warten. (Das kann aber das Ergebnis beeinflussen)
+5- In der Zeile "downsample_method = xf.SampleFrac(1.0 - 0.1, rng_spec=42)" kann man es ändern, wie viel Prozent der Daten verwendet wird
