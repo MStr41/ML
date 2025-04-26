@@ -78,7 +78,7 @@ class nDCG_LK:
 seedbank.initialize(42)
 
 # Load and preprocess the dataset
-file_path = '/content/drive/MyDrive/Master Thesis/Dataset/ml-100k'
+file_path = './ml-100k'
 ml100k = ML100K(file_path)
 ratings = ml100k.ratings
 
@@ -201,7 +201,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10)
+    recs = batch.recommend(fittable, users, 10,n_jobs=1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
