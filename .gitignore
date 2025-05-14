@@ -2,7 +2,9 @@
 ml-100k/
 ml-10M100K/
 ml-1m/
-
+*.csv
+*.gz
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
