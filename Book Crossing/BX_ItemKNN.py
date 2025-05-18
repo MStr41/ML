@@ -74,7 +74,7 @@ pure_train_data = pd.concat(train_parts)
 validation_data = pd.concat(valid_parts)
 
 # Downsample the training data (use 50%)
-downsample_method = xf.SampleFrac(1.0 - 0.5, rng_spec=42)
+downsample_method = xf.SampleFrac(1.0 - 1.0, rng_spec=42)
 downsampled_parts = []
 
 for part in xf.partition_users(pure_train_data, 1, downsample_method):

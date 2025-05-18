@@ -83,7 +83,7 @@ def load_json_data(file_path, chunksize=10000):
     return pd.concat(chunks, ignore_index=True)
 
 # Load and preprocess ratings data
-file_path = 'Grocery_and_Gourmet_Food/Grocery_and_Gourmet_Food_5.json.gz'
+file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
 ratings = load_json_data(file_path)
 print(len(ratings))
 ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
