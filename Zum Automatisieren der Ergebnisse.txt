@@ -1,0 +1,23 @@
+Zum Automatisieren:
+
+import json
+import sys
+
+
+##########################################################################
+try:
+    fraction_value = float(sys.argv[1])  
+except (IndexError, ValueError):
+    fraction_value = 1.0
+downsample_fraction = fraction_value
+##########################################################################
+
+
+#############################################
+with open("metric_results.json", "w") as f: 
+    json.dump(float(--Ergebnis Wert---), f)
+#############################################
+
+"metric_results.json" Datei bei jeden Ordnern der Datensätzen
+
+
