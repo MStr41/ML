@@ -1,0 +1,4 @@
+1) Ich habe erstmal Anaconda Promt heruntergeladen um im Conda Enviroment zu arbeiten. 
+2) Anschließend habe ich eine neue Conda Umgebung erstellt mit Python Version 3.8 durch den Code in Anaconda Promt Terminal "conda create -n lenskitenv python=3.8" und dann die Umgebung gestartet durch "conda activate lenskitenv"
+3) Danach lenskit heruntergeladen durch "pip install lenskit==0.14.4"
+4) Am Ende dann die nötige Pakete wie seedbank usw. durch "pip install seedbank"
