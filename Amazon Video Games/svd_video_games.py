@@ -6,6 +6,9 @@ import pandas as pd
 import joblib
 import json
 from recpack.preprocessing.preprocessors import DataFramePreprocessor
+import sys  
+
+ndcg_value = 0
 
 # Function to load the JSON data
 def load_json_data(file_path, chunksize=10000):
@@ -156,7 +159,14 @@ print("Number of unique items in test set:", len(test_out_interactions.active_it
 
 # Downsampling training set (Again, fraction value is different to maintatin the 50-50 split ration in this case correctly (due to rounding up effect))
 # Amazon_Toys and Games:  10% = 0.072....20% = 0.166....30% = 0.260....40% = 0.364....50% = 0.461....60% = 0.560....70% = 0.665....80% = 0.760....90% = 0.875...100% = 1.0
+#fraction value can be managed from another python code to automate the values
+##########################################################################
+try:
+    fraction_value = float(sys.argv[1])  
+except (IndexError, ValueError):
+    fraction_value = 1.0  
 downsample_fraction = 1.0
+##########################################################################
 additional_split_scenario = WeakGeneralization(frac_data_in=downsample_fraction, validation=False, seed=42)
 additional_split_scenario.split(train_interactions)
 
@@ -209,3 +219,7 @@ print(metric_results)
 print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
 
+#############################################
+with open("metric_results.json", "w") as f: 
+    json.dump(metric_results.to_dict(), f)
+#############################################
