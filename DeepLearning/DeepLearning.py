@@ -28,26 +28,47 @@ from keras.saving import register_keras_serializable
 
 directory = os.getcwd()
 
-dataPath = os.path.join(directory, 'bla.parquet')
+#dataPath = os.path.join(directory, 'bla.parquet')
 
-data = pd.read_parquet(dataPath)
+dataPath = os.path.join(directory, 'time_series_15min_singleindex.csv')
 
-print(data)
 
-if 0 == 1:
+
+#data = pd.read_parquet(dataPath)
+
+data = pd.read_csv(dataPath, delimiter=",")
+
+
+data.rename(columns={'utc_timestamp': 'time'}, inplace=True)
+data.rename(columns={'DE_tennet_wind_generation': 'value'}, inplace=True)
+print(len(data))
+data = data.dropna(subset=['value'])
+print(len(data))
+#print(data[['time', 'value']])
+
+#print(data['value'].isna().sum())
+#data['value'] = np.where(data['value'] == np.NAN, data['value'], 0)
+#print(data['value'].isna().sum())
+#print(data['time'].isna().sum())
+#print(len(data))
+#data['time'] = pd.to_datetime(data['time'])
+#data['time'] = data['time'].astype(np.int64)
+#print(data['time'])
+
+if 1 == 1:
 
     data['value'] = pd.to_numeric(data['value'], errors='coerce')
 
     data = data.dropna(subset=['value'])
 
-    nameModell = "DeepLearning" + "bla.parquet" + ".keras"
+    nameModell = "DeepLearning" + "time_series_15min_singleindex.csv" + ".keras"
 
     pathFolder = os.path.join(directory, nameModell)
 
     #Zeitstempel in numerische Werte umwandeln, falls sie noch nicht im richtigen Format sind
     data['time'] = pd.to_datetime(data['time'])
         
-    data['time'] = data['time'].astype(np.int64)
+    data['time'] = data['time'].astype(np.int64) // 10**6
 
     letzteDatum = np.max(data['time'].values)
 
@@ -56,24 +77,29 @@ if 0 == 1:
     #Datei bearbeiten
 
     # Target, der Punkt an dem der Sensorwert den Grenzwert erreicht
-    data['target'] = np.where(data['value'] == grenzwert, data['time'], time_value)
+    #data['value'] = np.where(data['value'] == np.NAN, data['value'], 0)
 
     # Feature und Ziel trennen
-    X = data[['time', 'value']].values
-    y = data['target'].values
+    X = data[['time', 'value']].iloc[:-1].values
+    y = data['value'].iloc[1:].values
 
     # Daten normalisieren
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
+    y = y.reshape(-1, 1)  # falls nötig
+    scaler_y = StandardScaler()
+    y_scaled = scaler_y.fit_transform(y)
+
+
     # Train- und Testdaten
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=42)
 
     @register_keras_serializable()
     def rmse_loss(y_true, y_pred):
         return tf.sqrt(tf.reduce_mean(tf.square(y_pred - y_true)))
 
-    if os.path.exists(pathFolder):
+    if 0==1:#os.path.exists(pathFolder):
 
             #loadModel = load_model(pathFolderPlusDatei)
             loadModel = load_model(pathFolder, custom_objects={'rmse_loss': rmse_loss})
@@ -84,15 +110,12 @@ if 0 == 1:
             #Modell erstellen
             model = Sequential([
             Input(shape=(X_train.shape[1],)),  # Eingabeschicht
-            Dense(64, kernel_regularizer=regularizers.l2(0.01)),  # L2 Regularisierung
-            LeakyReLU(alpha=0.1),
-            Dropout(0.2),  # Eingabeschicht
             Dense(32, kernel_regularizer=regularizers.l2(0.01)),  # L2 Regularisierung
             LeakyReLU(alpha=0.1),
-            Dropout(0.2),
+            Dropout(0.1),  # Eingabeschicht
             Dense(16, kernel_regularizer=regularizers.l2(0.01)),  # L2 Regularisierung
             LeakyReLU(alpha=0.1),
-            Dropout(0.2),
+            Dropout(0.1),
             Dense(1)  # Ausgabeschicht
             ])
 
@@ -111,12 +134,13 @@ if 0 == 1:
                         yield batch_x, batch_y
 
             #Modell trainieren
-            model.fit(data_generator(512,X_train, y_train), epochs = 1, validation_data = (X_test, y_test), steps_per_epoch = len(X_train) // 512, callbacks=[early_stopping])
+            model.fit(data_generator(2048,X_train, y_train), epochs = 5, validation_data = (X_test, y_test), steps_per_epoch = len(X_train) // 2048, callbacks=[early_stopping])
 
             # Modell speichern
             model.save(pathFolder)
 
             #Vorhersage
-            prediction = model.predict(X_test)
+            prediction_scaled = model.predict(X_test)
+            prediction = scaler_y.inverse_transform(prediction_scaled)
 
     print(prediction)
