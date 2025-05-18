@@ -12,10 +12,16 @@ except (IndexError, ValueError):
 downsample_fraction = fraction_value
 ##########################################################################
 
-
+bei Lenskit
 #############################################
 with open("metric_results.json", "w") as f: 
     json.dump(float(--Ergebnis Wert---), f)
+#############################################
+
+bei RecPack
+#############################################
+with open("metric_results.json", "w") as f: 
+    json.dump(--Ergebnis Wert--.to_dict()), f)
 #############################################
 
 "metric_results.json" Datei bei jeden Ordnern der Datensätzen

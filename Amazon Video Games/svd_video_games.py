@@ -221,5 +221,5 @@ print(pipeline.optimisation_results)
 
 #############################################
 with open("metric_results.json", "w") as f: 
-    json.dump(float(final_test_ndcg), f)
+    json.dump(metric_results.to_dict(), f)
 #############################################

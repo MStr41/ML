@@ -4,7 +4,7 @@ import re
 import json
 
 env_python = r"C:\Users\murat\anaconda3\envs\newlenskit\python.exe"
-script_path = "bias_video_games.py"
+script_path = "svd_video_games.py"
 
 
 fraction_value = 0.1
