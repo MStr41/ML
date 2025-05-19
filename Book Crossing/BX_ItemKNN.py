@@ -3,13 +3,15 @@ import numpy as np
 from lenskit.algorithms import item_knn as knn
 from lenskit import batch, util, crossfold as xf, Recommender
 import seedbank
+import json
+import sys
 
 # -------------------------------
 # 1. LOAD & CLEAN THE DATA
 # -------------------------------
 
 # Load the Book-Ratings file
-ratings = pd.read_csv('Book_Crossing_Dataset/BX-Book-Ratings.csv', sep=';', encoding='latin-1',
+ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
                       usecols=['User-ID', 'ISBN', 'Book-Rating'])
 
 # Rename columns
@@ -74,7 +76,14 @@ pure_train_data = pd.concat(train_parts)
 validation_data = pd.concat(valid_parts)
 
 # Downsample the training data (use 50%)
-downsample_method = xf.SampleFrac(1.0 - 0.5, rng_spec=42)
+##########################################################################
+try:
+    fraction_value = float(sys.argv[1])  
+except (IndexError, ValueError):
+    fraction_value = 1.0
+downsample_fraction = fraction_value
+##########################################################################
+downsample_method = xf.SampleFrac(1.0 - fraction_value, rng_spec=42)
 downsampled_parts = []
 
 for part in xf.partition_users(pure_train_data, 1, downsample_method):
@@ -166,3 +175,8 @@ final_algo = knn.ItemItem(nnbrs=best_k, center=False, aggregate='sum', feedback=
 _, final_test_ndcg = evaluate_with_ndcg('ItemItem', final_algo, downsampled_train_data, final_test_data)
 
 print(f"\n✅ Final Test Set nDCG@10: {final_test_ndcg:.4f}")
+
+#############################################
+with open("metric_results.json", "w") as f: 
+    json.dump(float(final_test_ndcg), f)
+#############################################

@@ -16,7 +16,9 @@ import gzip
 import json
 from lenskit import crossfold as xf
 import seedbank
-
+################
+import sys
+################
 """
 Previous Behavior (Before Update):
 Before the modification, the nDCG_LK class in LensKit used the following approach:
@@ -83,7 +85,7 @@ def load_json_data(file_path, chunksize=10000):
     return pd.concat(chunks, ignore_index=True)
 
 # Load and preprocess ratings data
-file_path = 'Video_Games/Video_Games_5.json.gz'
+file_path = 'Video_Games_5.json.gz'
 ratings = load_json_data(file_path)
 print(len(ratings))
 ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
@@ -224,7 +226,14 @@ print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
 
 
 # Downsample the training set to different% of interactions for each user using xf.SampleFrac
-downsample_method = xf.SampleFrac(1.0 - 1.0, rng_spec=42)
+##########################################################################
+try:
+    fraction_value = float(sys.argv[1])  
+except (IndexError, ValueError):
+    fraction_value = 0.1
+downsample_fraction = fraction_value
+##########################################################################
+downsample_method = xf.SampleFrac(1.0 - downsample_fraction, rng_spec=42)
 downsampled_train_parts = []
 
 for i, tp in enumerate(xf.partition_users(pure_train_data, 1, downsample_method)):
@@ -272,3 +281,8 @@ final_algo = Bias(damping = 1000)
 # Use evaluate_with_ndcg to get recommendations and mean nDCG
 final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train_data, final_test_data)
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
+
+#############################################
+with open("metric_results.json", "w") as f: 
+    json.dump(float(mean_ndcg), f)
+#############################################

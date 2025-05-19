@@ -1,0 +1,29 @@
+Zum Automatisieren:
+
+import json
+import sys
+
+
+##########################################################################
+try:
+    fraction_value = float(sys.argv[1])  
+except (IndexError, ValueError):
+    fraction_value = 1.0
+downsample_fraction = fraction_value
+##########################################################################
+
+bei Lenskit
+#############################################
+with open("metric_results.json", "w") as f: 
+    json.dump(float(--Ergebnis Wert---), f)
+#############################################
+
+bei RecPack
+#############################################
+with open("metric_results.json", "w") as f: 
+    json.dump(--Ergebnis Wert--.to_dict()), f)
+#############################################
+
+"metric_results.json" Datei bei jeden Ordnern der Datensätzen
+
+
