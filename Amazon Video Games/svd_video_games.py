@@ -6,7 +6,7 @@ import pandas as pd
 import joblib
 import json
 from recpack.preprocessing.preprocessors import DataFramePreprocessor
-import sys  
+
 
 ndcg_value = 0
 
@@ -161,11 +161,12 @@ print("Number of unique items in test set:", len(test_out_interactions.active_it
 # Amazon_Toys and Games:  10% = 0.072....20% = 0.166....30% = 0.260....40% = 0.364....50% = 0.461....60% = 0.560....70% = 0.665....80% = 0.760....90% = 0.875...100% = 1.0
 #fraction value can be managed from another python code to automate the values
 ##########################################################################
+import sys
 try:
     fraction_value = float(sys.argv[1])  
 except (IndexError, ValueError):
-    fraction_value = 1.0  
-downsample_fraction = 1.0
+    fraction_value = 0.7
+downsample_fraction = fraction_value
 ##########################################################################
 additional_split_scenario = WeakGeneralization(frac_data_in=downsample_fraction, validation=False, seed=42)
 additional_split_scenario.split(train_interactions)
@@ -219,7 +220,38 @@ print(metric_results)
 print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
 
-#############################################
-with open("metric_results.json", "w") as f: 
-    json.dump(metric_results.to_dict(), f)
-#############################################
+#################################################
+ndcg_value = metric_results["NDCGK_10"].values[0]
+key_name = "svd_video_games"
+
+from filelock import FileLock
+import os
+import json
+
+
+output_file = "metric_results.json"
+lock_file = output_file + ".lock"
+fraction_key = str(downsample_fraction)
+
+#Mit lock wird es gesichert
+with FileLock(lock_file):
+    # Datei lesen und schreiben
+    if os.path.exists(output_file):
+        with open(output_file, "r") as f:
+            try:
+                content = json.load(f)
+                if not isinstance(content, dict):
+                    content = {}
+            except json.JSONDecodeError:
+                content = {}
+    else:
+        content = {}
+
+    if key_name not in content:
+        content[key_name] = {}
+
+    content[key_name][fraction_key] = ndcg_value
+
+    with open(output_file, "w") as f:
+        json.dump(content, f, indent=4)
+#################################################
