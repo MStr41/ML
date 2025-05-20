@@ -66,3 +66,4 @@ try:
 
 except Exception as e:
     print("Fehler beim Laden der JSON-Datei:", e)
+
