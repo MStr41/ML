@@ -4,7 +4,7 @@ import json
 import os
 
 env_python = r"C:\Users\murat\anaconda3\envs\lenskit-env\python.exe"
-script_path = "nmf_video_games.py"
+script_path = "random_video_games.py"
 key_name = os.path.splitext(os.path.basename(script_path))[0]
 
 # Fraction werte: 0.1, 0.2, ..., 1.0
