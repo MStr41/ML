@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from lenskit.algorithms import Recommender
-from lenskit.algorithms.bias import Bias
+from lenskit.algorithms.funksvd import FunkSVD
 from lenskit import batch, topn, util
 import pandas as pd
 import joblib
@@ -44,7 +44,6 @@ class nDCG_LK:
         ndcg = dcg / ideal_dcg
         return ndcg
 
-# Initialize seed
 seedbank.initialize(42)
 
 # Function to load the JSON data
@@ -52,7 +51,7 @@ def load_json_data(file_path, chunksize=10000):
     chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
     return pd.concat(chunks, ignore_index=True)
 
-# Load and preprocess the dataset
+# Load and preprocess ratings data
 file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
 ratings = load_json_data(file_path)
 print(len(ratings))
@@ -133,8 +132,6 @@ def prune_10_core(data):
 # Apply 10-core pruning
 ratings = prune_10_core(ratings)
 
-
-
 # Inspect the pruned ratings data
 print("\nAfter Pruning:")
 print("Number of interactions:", len(ratings))
@@ -161,6 +158,16 @@ for tp in xf.partition_users(ratings, 1, final_test_method):
 train_data = pd.concat(train_parts)
 final_test_data = pd.concat(test_parts)
 
+# Check and print the number of interactions and users in each set
+
+print("Train Data - Number of Interactions:", len(train_data))
+
+print("Final Test Data - Number of Interactions:", len(final_test_data))
+
+print("Train Data - Number of Users:", train_data['user'].nunique())
+
+print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
+
 # Split train data into train and validation sets
 validation_split_method = xf.SampleFrac(0.1111, rng_spec=42)
 
@@ -184,17 +191,17 @@ print("Pure Train Data - Number of Users:", pure_train_data['user'].nunique())
 print("Validation Data - Number of Users:", validation_data['user'].nunique())
 print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
 
-# Downsample the training set to different% of interactions for each user using xf.SampleFrac
+
 # Downsample the training set to different% of interactions for each user using xf.SampleFrac
 ##########################################################################
 import sys
 try:
     fraction_value = float(sys.argv[1])  
 except (IndexError, ValueError):
-    fraction_value = 1.0
+    fraction_value = 0.7
 downsample_fraction = fraction_value
 ##########################################################################
-downsample_method = xf.SampleFrac(1.0 - downsample_fraction, rng_spec=42)
+downsample_method = xf.SampleFrac(1.0 - fraction_value, rng_spec=42)
 downsampled_train_parts = []
 
 for i, tp in enumerate(xf.partition_users(pure_train_data, 1, downsample_method)):
@@ -218,7 +225,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10, n_jobs=1)
+    recs = batch.recommend(fittable, users, 10,n_jobs = 1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
@@ -231,21 +238,45 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     mean_ndcg = total_ndcg / len(users)
     return recs, mean_ndcg
 
-# Perform validation and compute nDCG
-algo_bias = Bias(damping = 1000)
-valid_recs, mean_ndcg = evaluate_with_ndcg('Bias', algo_bias, downsampled_train_data, validation_data)
-print(f"NDCG mean for validation set: {mean_ndcg:.4f}")
+# Perform hyperparameter tuning on the validation set and compute nDCG (Other hyperparameters have alredy been tested and tuned for the best configuration)
+results = []
+best_features = None
+best_iterations = None
+best_mean_ndcg = -float('inf')
+iteration_values = [1, 5, 10, 20]
+feature_values = [1, 2, 3, 6, 10, 30]  # Define a range of feature values to test
 
-# Fit the algorithm on the full training data
-final_algo = Bias(damping = 1000)
+# Iterate over each iteration value and each feature value
+for iterations in iteration_values:
+    for features in feature_values:
+        seedbank.initialize(42)  # Reset the random seed for reproducibility
+        algo_funksvd = FunkSVD(features=features, iterations=iterations, lrate=0.001, reg=0.015, damping=0, bias=False, random_state=42)
+        # Evaluate the model and compute mean nDCG
+        valid_recs, mean_ndcg = evaluate_with_ndcg('FunkSVD', algo_funksvd, downsampled_train_data, validation_data)
+        results.append({'Features': features, 'Iterations': iterations, 'Mean nDCG': mean_ndcg})
 
+        # Check if the current combination is the best so far
+        if mean_ndcg > best_mean_ndcg:
+            best_mean_ndcg = mean_ndcg
+            best_features = features
+            best_iterations = iterations
+
+print("Results:")
+for result in results:
+    print(f"Features = {result['Features']}, Iterations = {result['Iterations']}: Mean nDCG = {result['Mean nDCG']:.4f}")
+
+print(f"\nBest Features: {best_features}, Best Iterations: {best_iterations} (Mean nDCG = {best_mean_ndcg:.4f})")
+
+# Fit the algorithm on the full training data with the best features and iterations
+final_algo = FunkSVD(features=best_features, iterations=best_iterations, lrate=0.001, reg=0.015, damping=0, bias=False, random_state=42)
 # Use evaluate_with_ndcg to get recommendations and mean nDCG
-final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train_data, final_test_data)
+final_recs, mean_ndcg = evaluate_with_ndcg('FunkSVD', final_algo, downsampled_train_data, final_test_data)
+
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
 ndcg_value = mean_ndcg
-key_name = "bias_grocery_and_gourmet_food"
+key_name = "funksvd_grocery_and_gourmet_food"
 
 from filelock import FileLock
 import os

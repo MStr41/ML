@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from lenskit.algorithms import Recommender
-from lenskit.algorithms.bias import Bias
+from lenskit.algorithms import Recommender, item_knn as knn
 from lenskit import batch, topn, util
 import pandas as pd
 import joblib
@@ -44,15 +43,11 @@ class nDCG_LK:
         ndcg = dcg / ideal_dcg
         return ndcg
 
-# Initialize seed
-seedbank.initialize(42)
-
 # Function to load the JSON data
 def load_json_data(file_path, chunksize=10000):
     chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
     return pd.concat(chunks, ignore_index=True)
-
-# Load and preprocess the dataset
+# Load and preprocess ratings data
 file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
 ratings = load_json_data(file_path)
 print(len(ratings))
@@ -112,6 +107,8 @@ print("Number of duplicate rows after cleaning:", duplicate_rows)
 duplicate_ratings = ratings.duplicated(subset=['user', 'item']).sum()
 print("Number of duplicate ratings (same user, same item) after cleaning:", duplicate_ratings)
 
+print(len(ratings))
+
 # 10-core pruning
 def prune_10_core(data):
     while True:
@@ -132,8 +129,6 @@ def prune_10_core(data):
 
 # Apply 10-core pruning
 ratings = prune_10_core(ratings)
-
-
 
 # Inspect the pruned ratings data
 print("\nAfter Pruning:")
@@ -161,6 +156,16 @@ for tp in xf.partition_users(ratings, 1, final_test_method):
 train_data = pd.concat(train_parts)
 final_test_data = pd.concat(test_parts)
 
+# Check and print the number of interactions and users in each set
+
+print("Train Data - Number of Interactions:", len(train_data))
+
+print("Final Test Data - Number of Interactions:", len(final_test_data))
+
+print("Train Data - Number of Users:", train_data['user'].nunique())
+
+print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
+
 # Split train data into train and validation sets
 validation_split_method = xf.SampleFrac(0.1111, rng_spec=42)
 
@@ -185,13 +190,12 @@ print("Validation Data - Number of Users:", validation_data['user'].nunique())
 print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
 
 # Downsample the training set to different% of interactions for each user using xf.SampleFrac
-# Downsample the training set to different% of interactions for each user using xf.SampleFrac
 ##########################################################################
 import sys
 try:
     fraction_value = float(sys.argv[1])  
 except (IndexError, ValueError):
-    fraction_value = 1.0
+    fraction_value = 0.7
 downsample_fraction = fraction_value
 ##########################################################################
 downsample_method = xf.SampleFrac(1.0 - downsample_fraction, rng_spec=42)
@@ -218,7 +222,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10, n_jobs=1)
+    recs = batch.recommend(fittable, users, 10,n_jobs = 1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
@@ -231,21 +235,40 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     mean_ndcg = total_ndcg / len(users)
     return recs, mean_ndcg
 
-# Perform validation and compute nDCG
-algo_bias = Bias(damping = 1000)
-valid_recs, mean_ndcg = evaluate_with_ndcg('Bias', algo_bias, downsampled_train_data, validation_data)
-print(f"NDCG mean for validation set: {mean_ndcg:.4f}")
+results = []
+best_k = None
+best_mean_ndcg = -float('inf')
 
-# Fit the algorithm on the full training data
-final_algo = Bias(damping = 1000)
+k_values = [1, 3, 5, 7, 20]
+
+for k in k_values:
+    seedbank.initialize(42)
+    algo_ii = knn.ItemItem(nnbrs=k, center=False, aggregate='sum', feedback="explicit")
+
+    valid_recs, mean_ndcg = evaluate_with_ndcg('ItemItem', algo_ii, downsampled_train_data, validation_data)
+    results.append({'K': k, 'Mean nDCG': mean_ndcg})
+
+    if mean_ndcg > best_mean_ndcg:
+        best_mean_ndcg = mean_ndcg
+        best_k = k
+
+print("Results:")
+for result in results:
+    print(f"K = {result['K']}: Mean nDCG = {result['Mean nDCG']:.4f}")
+
+print(f"\nBest K: {best_k} (Mean nDCG = {best_mean_ndcg:.4f})")
+
+# Fit the algorithm on the full training data with the best K
+final_algo = knn.ItemItem(nnbrs=best_k, center=False, aggregate='sum', feedback="explicit")
 
 # Use evaluate_with_ndcg to get recommendations and mean nDCG
-final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train_data, final_test_data)
+final_recs, mean_ndcg = evaluate_with_ndcg('ItemItem', final_algo, downsampled_train_data, final_test_data)
+
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
 ndcg_value = mean_ndcg
-key_name = "bias_grocery_and_gourmet_food"
+key_name = "itemknn_lenskit_grocery_and_gourmet_food"
 
 from filelock import FileLock
 import os
