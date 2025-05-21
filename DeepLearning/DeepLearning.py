@@ -21,6 +21,7 @@ from tensorflow.keras.metrics import MeanAbsolutePercentageError
 from tensorflow.keras import regularizers
 from keras.models import load_model
 from keras.saving import register_keras_serializable
+import matplotlib.pyplot as plt
 
 
 
@@ -41,9 +42,7 @@ data = pd.read_csv(dataPath, delimiter=",")
 
 data.rename(columns={'utc_timestamp': 'time'}, inplace=True)
 data.rename(columns={'DE_tennet_wind_generation': 'value'}, inplace=True)
-print(len(data))
 data = data.dropna(subset=['value'])
-print(len(data))
 #print(data[['time', 'value']])
 
 #print(data['value'].isna().sum())
@@ -54,6 +53,8 @@ print(len(data))
 #data['time'] = pd.to_datetime(data['time'])
 #data['time'] = data['time'].astype(np.int64)
 #print(data['time'])
+#print(data['value'].values)
+
 
 if 1 == 1:
 
@@ -72,12 +73,14 @@ if 1 == 1:
 
     letzteDatum = np.max(data['time'].values)
 
-    #dataRead = dataRead.sample(frac=0.00001, random_state=42)
+    #Downsampling
+    print(len(data))
+    percent = 1.0
+    n = int(len(data) * percent)
+    data = data.iloc[:n]
+    print(len(data))
 
     #Datei bearbeiten
-
-    # Target, der Punkt an dem der Sensorwert den Grenzwert erreicht
-    #data['value'] = np.where(data['value'] == np.NAN, data['value'], 0)
 
     # Feature und Ziel trennen
     X = data[['time', 'value']].iloc[:-1].values
@@ -134,7 +137,18 @@ if 1 == 1:
                         yield batch_x, batch_y
 
             #Modell trainieren
-            model.fit(data_generator(2048,X_train, y_train), epochs = 5, validation_data = (X_test, y_test), steps_per_epoch = len(X_train) // 2048, callbacks=[early_stopping])
+            history  = model.fit(data_generator(2048,X_train, y_train), epochs = 128, validation_data = (X_test, y_test), steps_per_epoch = len(X_train) // 2048, callbacks=[early_stopping])
+            # Plotten von loss und val_loss
+            plt.figure(figsize=(10, 6))
+            plt.plot(history.history['loss'], label='Trainings-Loss')
+            plt.plot(history.history['val_loss'], label='Validierungs-Loss')
+            plt.xlabel('Epoche')
+            plt.ylabel('Loss (RMSE)')
+            plt.title('Trainings- und Validierungsverlust')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.show()
 
             # Modell speichern
             model.save(pathFolder)
