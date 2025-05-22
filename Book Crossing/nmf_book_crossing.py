@@ -1,26 +1,24 @@
+# -*- coding: utf-8 -*-
 import recpack.pipelines as pipelines
 from recpack.scenarios import WeakGeneralization
 from recpack.preprocessing.filters import MinItemsPerUser, MinUsersPerItem, Deduplicate
 import numpy as np
 import pandas as pd
 import joblib
+import gzip
 import json
 from recpack.preprocessing.preprocessors import DataFramePreprocessor
 
-
-ndcg_value = 0
-
-# Function to load the JSON data
-def load_json_data(file_path, chunksize=10000):
-    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
-    return pd.concat(chunks, ignore_index=True)
 # Set random seed for reproducibility
 np.random.seed(42)
 # Load and preprocess ratings data
-file_path = 'Video_Games_5.json.gz'
-ratings = load_json_data(file_path)
+file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
+ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
+                      usecols=['User-ID', 'ISBN', 'Book-Rating'])
 print(len(ratings))
-ratings = ratings.rename(columns={'reviewerID': 'user_id', 'asin': 'item_id', 'overall': 'rating'})
+
+# Rename columns to match RecPack expectations
+ratings = ratings.rename(columns={'User-ID': 'user_id', 'ISBN': 'item_id', 'Book-Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 
 # Convert 'rating' column to float
@@ -159,13 +157,12 @@ print("Number of unique items in test set:", len(test_out_interactions.active_it
 
 # Downsampling training set (Again, fraction value is different to maintatin the 50-50 split ration in this case correctly (due to rounding up effect))
 # Amazon_Toys and Games:  10% = 0.072....20% = 0.166....30% = 0.260....40% = 0.364....50% = 0.461....60% = 0.560....70% = 0.665....80% = 0.760....90% = 0.875...100% = 1.0
-#fraction value can be managed from another python code to automate the values
 ##########################################################################
 import sys
 try:
     fraction_value = float(sys.argv[1])  
 except (IndexError, ValueError):
-    fraction_value = 0.7
+    fraction_value = 0.1
 downsample_fraction = fraction_value
 ##########################################################################
 additional_split_scenario = WeakGeneralization(frac_data_in=downsample_fraction, validation=False, seed=42)
@@ -190,9 +187,10 @@ pipeline_builder.set_validation_data((downsampled_train_interactions, valid_inte
 
 # Add algorithm with hyperparameter ranges for optimization
 pipeline_builder.add_algorithm(
-    'SVD',
+    'NMF',
     grid={
-        'num_components': [20, 30, 60, 80, 100, 200, 300, 400, 500, 600, 800, 1000],  # Range of number of components to test
+        'num_components': [100, 200, 500, 1000],  # Range of number of components to test
+        'alpha': [0, 0.001, 0.01, 0.1],
         'seed': [42]
     }
 )
@@ -222,7 +220,7 @@ print(pipeline.optimisation_results)
 
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "svd_video_games"
+key_name = "nmf_book_crossing"
 
 from filelock import FileLock
 import os

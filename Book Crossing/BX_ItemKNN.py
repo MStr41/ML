@@ -174,9 +174,40 @@ print(f"\nBest K = {best_k} (nDCG = {best_mean_ndcg:.4f})")
 final_algo = knn.ItemItem(nnbrs=best_k, center=False, aggregate='sum', feedback="explicit")
 _, final_test_ndcg = evaluate_with_ndcg('ItemItem', final_algo, downsampled_train_data, final_test_data)
 
-print(f"\n✅ Final Test Set nDCG@10: {final_test_ndcg:.4f}")
+print(f"\n Final Test Set nDCG@10: {final_test_ndcg:.4f}")
 
-#############################################
-with open("metric_results.json", "w") as f: 
-    json.dump(float(final_test_ndcg), f)
-#############################################
+#################################################
+ndcg_value = final_test_ndcg
+key_name = "item_knn_book_crossing"
+
+from filelock import FileLock
+import os
+import json
+
+
+output_file = "metric_results.json"
+lock_file = output_file + ".lock"
+fraction_key = str(downsample_fraction)
+
+#Mit lock wird es gesichert
+with FileLock(lock_file):
+    # Datei lesen und schreiben
+    if os.path.exists(output_file):
+        with open(output_file, "r") as f:
+            try:
+                content = json.load(f)
+                if not isinstance(content, dict):
+                    content = {}
+            except json.JSONDecodeError:
+                content = {}
+    else:
+        content = {}
+
+    if key_name not in content:
+        content[key_name] = {}
+
+    content[key_name][fraction_key] = ndcg_value
+
+    with open(output_file, "w") as f:
+        json.dump(content, f, indent=4)
+#################################################

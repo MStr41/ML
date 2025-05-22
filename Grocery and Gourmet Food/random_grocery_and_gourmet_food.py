@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-
 from lenskit.algorithms import Recommender
-from lenskit.algorithms.bias import Bias
+from lenskit.algorithms.basic import Random
 from lenskit import batch, topn, util
 import pandas as pd
 import joblib
@@ -53,7 +51,7 @@ def load_json_data(file_path, chunksize=10000):
     return pd.concat(chunks, ignore_index=True)
 
 # Load and preprocess ratings data
-file_path = 'Video_Games_5.json.gz'
+file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
 ratings = load_json_data(file_path)
 print(len(ratings))
 ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
@@ -226,7 +224,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10, n_jobs=1)
+    recs = batch.recommend(fittable, users, 10,n_jobs = 1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
@@ -240,26 +238,29 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     return recs, mean_ndcg
 
 # Perform validation and compute nDCG
-algo_bias = Bias(damping = 1000)
-valid_recs, mean_ndcg = evaluate_with_ndcg('Bias', algo_bias, downsampled_train_data, validation_data)
+algo_random = Random()
+valid_recs, mean_ndcg = evaluate_with_ndcg('Random', algo_random, downsampled_train_data, validation_data)
 print(f"NDCG mean for validation set: {mean_ndcg:.4f}")
 
-# Fit the algorithm on the full training data
-final_algo = Bias(damping = 1000)
+# Fit the algorithm on the full training data with the best features
+final_algo  = Random()
 
 # Use evaluate_with_ndcg to get recommendations and mean nDCG
-final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train_data, final_test_data)
+final_recs, mean_ndcg = evaluate_with_ndcg('Random', final_algo, downsampled_train_data, final_test_data)
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
+ndcg_value = mean_ndcg
+key_name = "random_grocery_and_gourmet_food"
+
 from filelock import FileLock
 import os
 import json
 
+
 output_file = "metric_results.json"
 lock_file = output_file + ".lock"
 fraction_key = str(downsample_fraction)
-ndcg_value = float(mean_ndcg)
 
 #Mit lock wird es gesichert
 with FileLock(lock_file):
@@ -275,10 +276,10 @@ with FileLock(lock_file):
     else:
         content = {}
 
-    if "bias_video_games" not in content:
-        content["bias_video_games"] = {}
+    if key_name not in content:
+        content[key_name] = {}
 
-    content["bias_video_games"][fraction_key] = ndcg_value
+    content[key_name][fraction_key] = ndcg_value
 
     with open(output_file, "w") as f:
         json.dump(content, f, indent=4)

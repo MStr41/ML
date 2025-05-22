@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from lenskit.algorithms import Recommender
 from lenskit.algorithms.bias import Bias
 from lenskit import batch, topn, util
@@ -226,7 +225,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10, n_jobs=1)
+    recs = batch.recommend(fittable, users, 10,n_jobs = 1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
@@ -252,14 +251,17 @@ final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
+ndcg_value = mean_ndcg
+key_name = "biasedMF_video_games"
+
 from filelock import FileLock
 import os
 import json
 
+
 output_file = "metric_results.json"
 lock_file = output_file + ".lock"
 fraction_key = str(downsample_fraction)
-ndcg_value = float(mean_ndcg)
 
 #Mit lock wird es gesichert
 with FileLock(lock_file):
@@ -275,10 +277,10 @@ with FileLock(lock_file):
     else:
         content = {}
 
-    if "bias_video_games" not in content:
-        content["bias_video_games"] = {}
+    if key_name not in content:
+        content[key_name] = {}
 
-    content["bias_video_games"][fraction_key] = ndcg_value
+    content[key_name][fraction_key] = ndcg_value
 
     with open(output_file, "w") as f:
         json.dump(content, f, indent=4)

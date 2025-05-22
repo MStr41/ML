@@ -1,28 +1,88 @@
 Zum Automatisieren:
 
-import json
-import sys
-
 
 ##########################################################################
+import sys
 try:
     fraction_value = float(sys.argv[1])  
 except (IndexError, ValueError):
-    fraction_value = 1.0
+    fraction_value = 0.7
 downsample_fraction = fraction_value
 ##########################################################################
 
-bei Lenskit
-#############################################
-with open("metric_results.json", "w") as f: 
-    json.dump(float(--Ergebnis Wert---), f)
-#############################################
+bei lenskit
+#################################################
+ndcg_value = mean_ndcg
+key_name = "svd_video_games"
 
-bei RecPack
-#############################################
-with open("metric_results.json", "w") as f: 
-    json.dump(--Ergebnis Wert--.to_dict()), f)
-#############################################
+from filelock import FileLock
+import os
+import json
+
+
+output_file = "metric_results.json"
+lock_file = output_file + ".lock"
+fraction_key = str(downsample_fraction)
+
+#Mit lock wird es gesichert
+with FileLock(lock_file):
+    # Datei lesen und schreiben
+    if os.path.exists(output_file):
+        with open(output_file, "r") as f:
+            try:
+                content = json.load(f)
+                if not isinstance(content, dict):
+                    content = {}
+            except json.JSONDecodeError:
+                content = {}
+    else:
+        content = {}
+
+    if key_name not in content:
+        content[key_name] = {}
+
+    content[key_name][fraction_key] = ndcg_value
+
+    with open(output_file, "w") as f:
+        json.dump(content, f, indent=4)
+#################################################
+
+bei recpack
+#################################################
+ndcg_value = metric_results["NDCGK_10"].values[0]
+key_name = "svd_video_games"
+
+from filelock import FileLock
+import os
+import json
+
+
+output_file = "metric_results.json"
+lock_file = output_file + ".lock"
+fraction_key = str(downsample_fraction)
+
+#Mit lock wird es gesichert
+with FileLock(lock_file):
+    # Datei lesen und schreiben
+    if os.path.exists(output_file):
+        with open(output_file, "r") as f:
+            try:
+                content = json.load(f)
+                if not isinstance(content, dict):
+                    content = {}
+            except json.JSONDecodeError:
+                content = {}
+    else:
+        content = {}
+
+    if key_name not in content:
+        content[key_name] = {}
+
+    content[key_name][fraction_key] = ndcg_value
+
+    with open(output_file, "w") as f:
+        json.dump(content, f, indent=4)
+#################################################
 
 "metric_results.json" Datei bei jeden Ordnern der Datensätzen
 

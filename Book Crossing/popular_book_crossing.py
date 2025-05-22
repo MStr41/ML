@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
 from lenskit.algorithms import Recommender
-from lenskit.algorithms.bias import Bias
+from lenskit.algorithms.basic import Popular
 from lenskit import batch, topn, util
 import pandas as pd
 import joblib
@@ -47,16 +46,12 @@ class nDCG_LK:
 
 seedbank.initialize(42)
 
-# Function to load the JSON data
-def load_json_data(file_path, chunksize=10000):
-    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
-    return pd.concat(chunks, ignore_index=True)
-
 # Load and preprocess ratings data
-file_path = 'Video_Games_5.json.gz'
-ratings = load_json_data(file_path)
+file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
+ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
+                      usecols=['User-ID', 'ISBN', 'Book-Rating'])
 print(len(ratings))
-ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
+ratings = ratings.rename(columns={'User-ID': 'user_id', 'ISBN': 'item_id', 'Book-Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
@@ -202,7 +197,7 @@ except (IndexError, ValueError):
     fraction_value = 0.7
 downsample_fraction = fraction_value
 ##########################################################################
-downsample_method = xf.SampleFrac(1.0 - downsample_fraction, rng_spec=42)
+downsample_method = xf.SampleFrac(1.0 - fraction_value, rng_spec=42)
 downsampled_train_parts = []
 
 for i, tp in enumerate(xf.partition_users(pure_train_data, 1, downsample_method)):
@@ -226,7 +221,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10, n_jobs=1)
+    recs = batch.recommend(fittable, users, 10,n_jobs = 1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
@@ -240,26 +235,29 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     return recs, mean_ndcg
 
 # Perform validation and compute nDCG
-algo_bias = Bias(damping = 1000)
-valid_recs, mean_ndcg = evaluate_with_ndcg('Bias', algo_bias, downsampled_train_data, validation_data)
+algo_popular = Popular()
+valid_recs, mean_ndcg = evaluate_with_ndcg('Popular', algo_popular, downsampled_train_data, validation_data)
 print(f"NDCG mean for validation set: {mean_ndcg:.4f}")
 
-# Fit the algorithm on the full training data
-final_algo = Bias(damping = 1000)
+# Fit the algorithm on the full training data with the best features
+final_algo  = Popular()
 
 # Use evaluate_with_ndcg to get recommendations and mean nDCG
-final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train_data, final_test_data)
+final_recs, mean_ndcg = evaluate_with_ndcg('Popular', final_algo, downsampled_train_data, final_test_data)
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
+ndcg_value = mean_ndcg
+key_name = "popular_book_crossing"
+
 from filelock import FileLock
 import os
 import json
 
+
 output_file = "metric_results.json"
 lock_file = output_file + ".lock"
 fraction_key = str(downsample_fraction)
-ndcg_value = float(mean_ndcg)
 
 #Mit lock wird es gesichert
 with FileLock(lock_file):
@@ -275,10 +273,10 @@ with FileLock(lock_file):
     else:
         content = {}
 
-    if "bias_video_games" not in content:
-        content["bias_video_games"] = {}
+    if key_name not in content:
+        content[key_name] = {}
 
-    content["bias_video_games"][fraction_key] = ndcg_value
+    content[key_name][fraction_key] = ndcg_value
 
     with open(output_file, "w") as f:
         json.dump(content, f, indent=4)

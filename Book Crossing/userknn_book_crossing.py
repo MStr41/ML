@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
-from lenskit.algorithms import Recommender
-from lenskit.algorithms.bias import Bias
+from lenskit.algorithms import Recommender, user_knn as knn
 from lenskit import batch, topn, util
 import pandas as pd
 import joblib
@@ -47,16 +45,12 @@ class nDCG_LK:
 
 seedbank.initialize(42)
 
-# Function to load the JSON data
-def load_json_data(file_path, chunksize=10000):
-    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
-    return pd.concat(chunks, ignore_index=True)
-
 # Load and preprocess ratings data
-file_path = 'Video_Games_5.json.gz'
-ratings = load_json_data(file_path)
+file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
+ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
+                      usecols=['User-ID', 'ISBN', 'Book-Rating'])
 print(len(ratings))
-ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
+ratings = ratings.rename(columns={'User-ID': 'user', 'ISBN': 'item', 'Book-Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
@@ -192,7 +186,6 @@ print("Pure Train Data - Number of Users:", pure_train_data['user'].nunique())
 print("Validation Data - Number of Users:", validation_data['user'].nunique())
 print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
 
-
 # Downsample the training set to different% of interactions for each user using xf.SampleFrac
 ##########################################################################
 import sys
@@ -226,7 +219,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10, n_jobs=1)
+    recs = batch.recommend(fittable, users, 10, n_jobs = 1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
@@ -239,27 +232,52 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     mean_ndcg = total_ndcg / len(users)
     return recs, mean_ndcg
 
-# Perform validation and compute nDCG
-algo_bias = Bias(damping = 1000)
-valid_recs, mean_ndcg = evaluate_with_ndcg('Bias', algo_bias, downsampled_train_data, validation_data)
-print(f"NDCG mean for validation set: {mean_ndcg:.4f}")
+# Perform hyperparameter tuning on the validation set and compute nDCG
+results = []
+best_k = None
+best_mean_ndcg = -float('inf')
 
-# Fit the algorithm on the full training data
-final_algo = Bias(damping = 1000)
+# List of K values to try
+k_values = [1, 3, 5, 10, 15]
+
+# Iterate over each K value
+for k in k_values:
+    seedbank.initialize(42)
+    algo_uu = knn.UserUser(nnbrs=k, center=False, aggregate='sum', feedback="explicit")
+
+    valid_recs, mean_ndcg = evaluate_with_ndcg('UserUser', algo_uu, downsampled_train_data, validation_data)
+    results.append({'K': k, 'Mean nDCG': mean_ndcg})
+
+    if mean_ndcg > best_mean_ndcg:
+        best_mean_ndcg = mean_ndcg
+        best_k = k
+
+print("Results:")
+for result in results:
+    print(f"K = {result['K']}: Mean nDCG = {result['Mean nDCG']:.4f}")
+
+print(f"\nBest K: {best_k} (Mean nDCG = {best_mean_ndcg:.4f})")
+
+# Fit the algorithm on the full training data with the best K
+final_algo = knn.UserUser(nnbrs=best_k, center=False, aggregate='sum', feedback="explicit")
 
 # Use evaluate_with_ndcg to get recommendations and mean nDCG
-final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train_data, final_test_data)
+final_recs, mean_ndcg = evaluate_with_ndcg('UserUser', final_algo, downsampled_train_data, final_test_data)
+
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
+ndcg_value = mean_ndcg
+key_name = "userknn_book_crossing"
+
 from filelock import FileLock
 import os
 import json
 
+
 output_file = "metric_results.json"
 lock_file = output_file + ".lock"
 fraction_key = str(downsample_fraction)
-ndcg_value = float(mean_ndcg)
 
 #Mit lock wird es gesichert
 with FileLock(lock_file):
@@ -275,10 +293,10 @@ with FileLock(lock_file):
     else:
         content = {}
 
-    if "bias_video_games" not in content:
-        content["bias_video_games"] = {}
+    if key_name not in content:
+        content[key_name] = {}
 
-    content["bias_video_games"][fraction_key] = ndcg_value
+    content[key_name][fraction_key] = ndcg_value
 
     with open(output_file, "w") as f:
         json.dump(content, f, indent=4)

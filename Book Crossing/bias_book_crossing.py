@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from lenskit.algorithms import Recommender
 from lenskit.algorithms.bias import Bias
 from lenskit import batch, topn, util
@@ -47,16 +46,13 @@ class nDCG_LK:
 
 seedbank.initialize(42)
 
-# Function to load the JSON data
-def load_json_data(file_path, chunksize=10000):
-    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
-    return pd.concat(chunks, ignore_index=True)
 
 # Load and preprocess ratings data
-file_path = 'Video_Games_5.json.gz'
-ratings = load_json_data(file_path)
+file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
+ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
+                      usecols=['User-ID', 'ISBN', 'Book-Rating'])
 print(len(ratings))
-ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
+ratings = ratings.rename(columns={'User-ID': 'user', 'ISBN': 'item', 'Book-Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
@@ -252,14 +248,17 @@ final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
+ndcg_value = mean_ndcg
+key_name = "bias_book_crossing"
+
 from filelock import FileLock
 import os
 import json
 
+
 output_file = "metric_results.json"
 lock_file = output_file + ".lock"
 fraction_key = str(downsample_fraction)
-ndcg_value = float(mean_ndcg)
 
 #Mit lock wird es gesichert
 with FileLock(lock_file):
@@ -275,10 +274,10 @@ with FileLock(lock_file):
     else:
         content = {}
 
-    if "bias_video_games" not in content:
-        content["bias_video_games"] = {}
+    if key_name not in content:
+        content[key_name] = {}
 
-    content["bias_video_games"][fraction_key] = ndcg_value
+    content[key_name][fraction_key] = ndcg_value
 
     with open(output_file, "w") as f:
         json.dump(content, f, indent=4)
