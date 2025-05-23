@@ -3,8 +3,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 
-env_python = r"C:\Users\murat\anaconda3\envs\lenskit-env\python.exe"
-script_path = "funksvd_video_games.py"
+env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
+script_path = "implicitmf_video_games.py"
 key_name = os.path.splitext(os.path.basename(script_path))[0]
 
 # Fraction werte: 0.1, 0.2, ..., 1.0
