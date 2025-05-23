@@ -33,128 +33,176 @@ directory = os.getcwd()
 
 dataPath = os.path.join(directory, 'time_series_15min_singleindex.csv')
 
-
-
-#data = pd.read_parquet(dataPath)
-
 data = pd.read_csv(dataPath, delimiter=",")
 
 
 data.rename(columns={'utc_timestamp': 'time'}, inplace=True)
 data.rename(columns={'DE_tennet_wind_generation': 'value'}, inplace=True)
 data = data.dropna(subset=['value'])
-#print(data[['time', 'value']])
 
-#print(data['value'].isna().sum())
-#data['value'] = np.where(data['value'] == np.NAN, data['value'], 0)
-#print(data['value'].isna().sum())
-#print(data['time'].isna().sum())
-#print(len(data))
-#data['time'] = pd.to_datetime(data['time'])
-#data['time'] = data['time'].astype(np.int64)
-#print(data['time'])
-#print(data['value'].values)
 
+#Datei bearbeiten
+
+data['value'] = pd.to_numeric(data['value'], errors='coerce')
+
+data = data.dropna(subset=['value'])
+
+nameModell = "DeepLearning" + "time_series_15min_singleindex.csv" + ".keras"
+
+pathFolder = os.path.join(directory, nameModell)
+
+#Zeitstempel in numerische Werte umwandeln, falls sie noch nicht im richtigen Format sind
+data['time'] = pd.to_datetime(data['time'])
+
+data['time'] = data['time'].astype(np.int64) // 10**6
+
+
+#all_losses_mean = []
+#all_val_losses_mean = []
+
+k = 5
+all_losses_mean = pd.DataFrame()
+all_val_losses_mean = pd.DataFrame()
 
 if 1 == 1:
 
-    data['value'] = pd.to_numeric(data['value'], errors='coerce')
+    for i in range(1, 11, 1):
 
-    data = data.dropna(subset=['value'])
-
-    nameModell = "DeepLearning" + "time_series_15min_singleindex.csv" + ".keras"
-
-    pathFolder = os.path.join(directory, nameModell)
-
-    #Zeitstempel in numerische Werte umwandeln, falls sie noch nicht im richtigen Format sind
-    data['time'] = pd.to_datetime(data['time'])
+        #Downsampling
+        percent = i/10
         
-    data['time'] = data['time'].astype(np.int64) // 10**6
+        print(len(data))
+        downSampling = int(len(data) * percent)
+        dataDownSampling = data.iloc[:downSampling]
+        print(len(dataDownSampling))
 
-    letzteDatum = np.max(data['time'].values)
+        all_losses_collect = pd.DataFrame()
+        all_val_losses_collect = pd.DataFrame()
 
-    #Downsampling
-    print(len(data))
-    percent = 1.0
-    n = int(len(data) * percent)
-    data = data.iloc[:n]
-    print(len(data))
+        
 
-    #Datei bearbeiten
+        for j in range(0,k,1):
+            print(percent)
+            # Feature und Ziel trennen
+            X = dataDownSampling[['time', 'value']].iloc[:-1].values
+            y = dataDownSampling['value'].iloc[1:].values
 
-    # Feature und Ziel trennen
-    X = data[['time', 'value']].iloc[:-1].values
-    y = data['value'].iloc[1:].values
+            #Daten normalisieren
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X)
 
-    # Daten normalisieren
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    y = y.reshape(-1, 1)  # falls nötig
-    scaler_y = StandardScaler()
-    y_scaled = scaler_y.fit_transform(y)
+            y = y.reshape(-1, 1)  #falls nötig
+            scaler_y = StandardScaler()
+            y_scaled = scaler_y.fit_transform(y)
 
 
-    # Train- und Testdaten
-    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=42)
+            #Train- und Testdaten
+            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=42)
 
-    @register_keras_serializable()
-    def rmse_loss(y_true, y_pred):
-        return tf.sqrt(tf.reduce_mean(tf.square(y_pred - y_true)))
+            @register_keras_serializable()
+            def rmse_loss(y_true, y_pred):
+                return tf.sqrt(tf.reduce_mean(tf.square(y_pred - y_true)))
 
-    if 0==1:#os.path.exists(pathFolder):
+            if 0==1:#os.path.exists(pathFolder):
 
-            #loadModel = load_model(pathFolderPlusDatei)
-            loadModel = load_model(pathFolder, custom_objects={'rmse_loss': rmse_loss})
-            prediction = loadModel.predict(X_test)
+                    #loadModel = load_model(pathFolderPlusDatei)
+                    loadModel = load_model(pathFolder, custom_objects={'rmse_loss': rmse_loss})
+                    prediction = loadModel.predict(X_test)
 
-    else:
+            else:
 
-            #Modell erstellen
-            model = Sequential([
-            Input(shape=(X_train.shape[1],)),  # Eingabeschicht
-            Dense(32, kernel_regularizer=regularizers.l2(0.01)),  # L2 Regularisierung
-            LeakyReLU(alpha=0.1),
-            Dropout(0.1),  # Eingabeschicht
-            Dense(16, kernel_regularizer=regularizers.l2(0.01)),  # L2 Regularisierung
-            LeakyReLU(alpha=0.1),
-            Dropout(0.1),
-            Dense(1)  # Ausgabeschicht
-            ])
+                    #Modell erstellen
+                    model = Sequential([
+                    Input(shape=(X_train.shape[1],)),  # Eingabeschicht
+                    Dense(32, kernel_regularizer=regularizers.l2(0.01)),  # L2 Regularisierung
+                    LeakyReLU(alpha=0.1),
+                    Dropout(0.1),  # Eingabeschicht
+                    Dense(16, kernel_regularizer=regularizers.l2(0.01)),  # L2 Regularisierung
+                    LeakyReLU(alpha=0.1),
+                    Dropout(0.1),
+                    Dense(1)  # Ausgabeschicht
+                    ])
 
-            #Modell komplieren
-            model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),loss=rmse_loss)
+                    #Modell kompilieren
+                    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),loss=rmse_loss)
 
-            #Early Stop
-            early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+                    #Early Stop
+                    early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
-            def data_generator(batch_size, X_data, y_data):
-                size = len(X_data)
-                while True:
-                    for i in range(0, size, batch_size):
-                        batch_x = X_data[i:i+batch_size]
-                        batch_y = y_data[i:i+batch_size]
-                        yield batch_x, batch_y
+                    def data_generator(batch_size, X_data, y_data):
+                        size = len(X_data)
+                        while True:
+                            for i in range(0, size, batch_size):
+                                batch_x = X_data[i:i+batch_size]
+                                batch_y = y_data[i:i+batch_size]
+                                yield batch_x, batch_y
 
-            #Modell trainieren
-            history  = model.fit(data_generator(2048,X_train, y_train), epochs = 128, validation_data = (X_test, y_test), steps_per_epoch = len(X_train) // 2048, callbacks=[early_stopping])
-            # Plotten von loss und val_loss
-            plt.figure(figsize=(10, 6))
-            plt.plot(history.history['loss'], label='Trainings-Loss')
-            plt.plot(history.history['val_loss'], label='Validierungs-Loss')
-            plt.xlabel('Epoche')
-            plt.ylabel('Loss (RMSE)')
-            plt.title('Trainings- und Validierungsverlust')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            plt.show()
+                    #Modell trainieren
+                    history  = model.fit(data_generator(2048,X_train, y_train), epochs = 128, validation_data = (X_test, y_test), steps_per_epoch = len(X_train) // 2048, callbacks=[early_stopping])
 
-            # Modell speichern
-            model.save(pathFolder)
+
+                    
+
+                    all_losses = pd.DataFrame(history.history['loss'])
+                    all_val_losses = pd.DataFrame(history.history['val_loss'])
+
+                    print('Test-------------------------------------------------')
+
+                    print(all_losses)
+                    print(all_val_losses)
+
+                    all_losses_collect = pd.concat([all_losses_collect, all_losses], axis=1)
+                    all_val_losses_collect = pd.concat([all_val_losses_collect, all_val_losses], axis=1)
+                    print(all_losses_collect)
+                    print(all_val_losses_collect)
+
+        print('----------------------------------------')
+        all_losses_collect = all_losses_collect.mean(axis=1).to_frame(name=f'{i*10}%')
+        all_val_losses_collect = all_val_losses_collect.mean(axis=1).to_frame(name=f'{i*10}%')
+        all_losses_mean = pd.concat([all_losses_mean, all_losses_collect], axis=1)
+        print(all_losses_mean)
+        all_val_losses_mean = pd.concat([all_val_losses_mean, all_val_losses_collect], axis=1)
+        print(all_val_losses_mean)
+
+
+
+            #Modell speichern
+            #model.save(pathFolder)
 
             #Vorhersage
-            prediction_scaled = model.predict(X_test)
-            prediction = scaler_y.inverse_transform(prediction_scaled)
+            #prediction_scaled = model.predict(X_test)
+            #prediction = scaler_y.inverse_transform(prediction_scaled)
 
-    print(prediction)
+            
+    #Daten in CSV-Datei speichern
+    all_losses_mean.to_csv('csv_loss.csv', index=True)
+
+    all_val_losses_mean.to_csv('csv_val_loss.csv', index=True)
+
+    path_csv_loss = os.path.join(directory, 'csv_loss.csv')
+    path_csv_val_loss = os.path.join(directory, 'csv_val_loss.csv')
+
+    #Plotten von loss und val_loss
+    plt.figure(figsize=(10, 6))
+    if 0==1:#os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss):
+        csv_loss = pd.read_csv('csv_loss.csv', delimiter=",")
+        csv_val_loss = pd.read_csv('csv_val_loss.csv', delimiter=",")
+        #plt.plot(csv_loss, label= 'Trainings-Loss ' + all_losses_mean.columns[0])
+        for col in all_losses_mean.columns:
+            plt.plot(all_losses_mean.index, all_losses_mean[col], label= 'Trainings-Loss ' + all_losses_mean.columns[0])
+        plt.plot(csv_val_loss, label='Validierungs-Loss ' + all_val_losses_mean.columns[0])
+
+    else:
+        plt.plot(all_losses_mean, label= 'Trainings-Loss ' + all_losses_mean.columns[0])
+        plt.plot(all_val_losses_mean, label='Validierungs-Loss ' + all_val_losses_mean.columns[0])
+    #plt.plot(history.history['loss'], label='Trainings-Loss')
+    #plt.plot(history.history['val_loss'], label='Validierungs-Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss (RMSE)')
+    plt.title('Trainings- und Validierungsverlust')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    #print(prediction)
