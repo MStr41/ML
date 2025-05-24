@@ -7,8 +7,6 @@ env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
 
 # List of script files to run
 script_paths = [
-    "ease_book_crossing.py",
-    "slim_book_crossing.py",
     "implicitmf_book_crossing.py"
 ]
 
