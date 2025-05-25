@@ -55,7 +55,7 @@ def load_json_data(file_path, chunksize=10000):
 # Load and preprocess ratings data
 file_path = 'goodreads_reviews_poetry.json.gz'
 ratings = load_json_data(file_path)
-print(len(ratings))
+
 ratings = ratings.rename(columns={'user_id': 'user', 'book_id': 'item', 'rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
@@ -63,7 +63,7 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user', 'item', 'rating']]
 print(ratings.head())
-print(len(ratings))
+
 
 # Convert user and item IDs to integers
 ratings['user'], user_index = pd.factorize(ratings['user'])
