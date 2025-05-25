@@ -225,7 +225,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10)
+    recs = batch.recommend(fittable, users, 10,n_jobs=1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
