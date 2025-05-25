@@ -245,7 +245,7 @@ best_features = None
 best_iterations = None
 best_mean_ndcg = -float('inf')
 
-feature_values = [50, 80, 90, 100, 120, 150, 200, 250, 300, 400]  # Define a range of feature values to test
+feature_values = [50, 80, 90, 100, 120, 150, 200, 250, 300, 400, 500]  # Define a range of feature values to test
 iteration_values = [1, 5, 10, 20]  # Define a range of iteration values to test
 
 # Iterate over each iteration value and each feature value
