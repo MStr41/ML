@@ -15,7 +15,7 @@ np.random.seed(42)
 file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
 ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
                       usecols=['User-ID', 'ISBN', 'Book-Rating'])
-print(len(ratings))
+
 
 # Rename columns to match RecPack expectations
 ratings = ratings.rename(columns={'User-ID': 'user_id', 'ISBN': 'item_id', 'Book-Rating': 'rating'})
@@ -26,7 +26,7 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user_id', 'item_id', 'rating']]
 print(ratings.head())
-print(len(ratings))
+
 
 # Convert user and item IDs to integers
 ratings['user_id'], user_index = pd.factorize(ratings['user_id'])

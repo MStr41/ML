@@ -7,7 +7,6 @@ env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
 
 # List of script files to run
 script_paths = [
-    "bias_beauty_products.py",
     "bpr_beauty_products.py",
     "ease_beauty_products.py",
     "funksvd_beauty_products.py",

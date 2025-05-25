@@ -50,7 +50,6 @@ seedbank.initialize(42)
 file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
 ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
                       usecols=['User-ID', 'ISBN', 'Book-Rating'])
-print(len(ratings))
 ratings = ratings.rename(columns={'User-ID': 'user', 'ISBN': 'item', 'Book-Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
@@ -58,7 +57,7 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user', 'item', 'rating']]
 print(ratings.head())
-print(len(ratings))
+
 
 # Convert user and item IDs to integers
 ratings['user'], user_index = pd.factorize(ratings['user'])

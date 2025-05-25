@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from lenskit.algorithms import Recommender
-from lenskit.algorithms.als import ImplicitMF
 from lenskit import batch, topn, util
 import pandas as pd
 import joblib
@@ -9,6 +7,9 @@ import json
 from lenskit import crossfold as xf
 import seedbank
 import numpy as np
+from lenskit.algorithms.als import ImplicitMF 
+from lenskit.algorithms import Recommender
+
 
 class nDCG_LK:
     def __init__(self, n, top_items, test_items):
@@ -46,13 +47,16 @@ class nDCG_LK:
 
 seedbank.initialize(42)
 
+# Function to load the JSON data
+def load_json_data(file_path, chunksize=10000):
+    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
+    return pd.concat(chunks, ignore_index=True)
 
-# Load and preprocess ratings data
-file_path = r'beauty_products_dataset\beauty_products_dataset.csv'
-ratings = pd.read_csv(file_path, sep=',', encoding='latin-1',
-                      usecols=['UserId', 'ProductId', 'Rating'])
+# Load and preprocess the dataset
+file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
+ratings = load_json_data(file_path)
 
-ratings = ratings.rename(columns={'UserId': 'user', 'ProductId': 'item', 'Rating': 'rating'})
+ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
@@ -187,14 +191,13 @@ print("Pure Train Data - Number of Users:", pure_train_data['user'].nunique())
 print("Validation Data - Number of Users:", validation_data['user'].nunique())
 print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
 
-
 # Downsample the training set to different% of interactions for each user using xf.SampleFrac
 ##########################################################################
 import sys
 try:
     fraction_value = float(sys.argv[1])  
 except (IndexError, ValueError):
-    fraction_value = 0.7
+    fraction_value = 0.1
 downsample_fraction = fraction_value
 ##########################################################################
 downsample_method = xf.SampleFrac(1.0 - downsample_fraction, rng_spec=42)
@@ -221,7 +224,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10, n_jobs=1)
+    recs = batch.recommend(fittable, users, 10, n_jobs = 1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
@@ -271,7 +274,7 @@ print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
 ndcg_value = mean_ndcg
-key_name = "implicitmf_beauty_products"
+key_name = "implicitmf_grocery_and_gourmet_food"
 
 from filelock import FileLock
 import os

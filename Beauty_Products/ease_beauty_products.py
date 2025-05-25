@@ -13,7 +13,7 @@ from recpack.preprocessing.preprocessors import DataFramePreprocessor
 np.random.seed(42)
 # Load and preprocess ratings data
 file_path = r'beauty_products_dataset\beauty_products_dataset.csv'
-ratings = pd.read_csv(file_path, sep=';', encoding='latin-1',
+ratings = pd.read_csv(file_path, sep=',', encoding='latin-1',
                       usecols=['UserId', 'ProductId', 'Rating'])
 
 ratings = ratings.rename(columns={'UserId': 'user_id', 'ProductId': 'item_id', 'Rating': 'rating'})
@@ -159,7 +159,7 @@ import sys
 try:
     fraction_value = float(sys.argv[1])  
 except (IndexError, ValueError):
-    fraction_value = 0.7
+    fraction_value = 0.1
 downsample_fraction = fraction_value
 ##########################################################################
 additional_split_scenario = WeakGeneralization(frac_data_in=downsample_fraction, validation=False, seed=42)

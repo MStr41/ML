@@ -48,7 +48,7 @@ seedbank.initialize(42)
 
 # Load and preprocess ratings data
 file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
-ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
+ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=',', encoding='latin-1',
                       usecols=['User-ID', 'ISBN', 'Book-Rating'])
 ratings = ratings.rename(columns={'User-ID': 'user', 'ISBN': 'item', 'Book-Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])

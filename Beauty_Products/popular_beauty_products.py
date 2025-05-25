@@ -48,7 +48,7 @@ seedbank.initialize(42)
 
 # Load and preprocess ratings data
 file_path = r'beauty_products_dataset\beauty_products_dataset.csv'
-ratings = pd.read_csv(file_path, sep=';', encoding='latin-1',
+ratings = pd.read_csv(file_path, sep=',', encoding='latin-1',
                       usecols=['UserId', 'ProductId', 'Rating'])
 ratings = ratings.rename(columns={'UserId': 'user', 'ProductId': 'item', 'Rating': 'rating'})
 

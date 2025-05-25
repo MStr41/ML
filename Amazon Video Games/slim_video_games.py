@@ -19,7 +19,6 @@ np.random.seed(42)
 # Load and preprocess ratings data
 file_path = 'Video_Games_5.json.gz'
 ratings = load_json_data(file_path)
-print(len(ratings))
 
 # Rename columns to match RecPack expectations
 ratings = ratings.rename(columns={'reviewerID': 'user_id', 'asin': 'item_id', 'overall': 'rating'})
@@ -30,7 +29,6 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user_id', 'item_id', 'rating']]
 print(ratings.head())
-print(len(ratings))
 
 # Convert user and item IDs to integers
 ratings['user_id'], user_index = pd.factorize(ratings['user_id'])

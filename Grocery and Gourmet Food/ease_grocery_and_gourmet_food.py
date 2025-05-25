@@ -9,6 +9,7 @@ import gzip
 import json
 from recpack.preprocessing.preprocessors import DataFramePreprocessor
 
+
 # Function to load the JSON data
 def load_json_data(file_path, chunksize=10000):
     chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
@@ -16,10 +17,9 @@ def load_json_data(file_path, chunksize=10000):
 # Set random seed for reproducibility
 np.random.seed(42)
 # Load and preprocess ratings data
-file_path = 'Video_Games_5.json.gz'
+file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
 ratings = load_json_data(file_path)
 
-# Rename columns to match RecPack expectations
 ratings = ratings.rename(columns={'reviewerID': 'user_id', 'asin': 'item_id', 'overall': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 
@@ -163,7 +163,7 @@ import sys
 try:
     fraction_value = float(sys.argv[1])  
 except (IndexError, ValueError):
-    fraction_value = 0.1
+    fraction_value = 0.7
 downsample_fraction = fraction_value
 ##########################################################################
 additional_split_scenario = WeakGeneralization(frac_data_in=downsample_fraction, validation=False, seed=42)
@@ -186,14 +186,9 @@ pipeline_builder.set_test_data((downsampled_train_interactions, test_out_interac
 pipeline_builder.set_validation_training_data(downsampled_train_interactions)
 pipeline_builder.set_validation_data((downsampled_train_interactions, valid_interactions))
 
-# Add algorithm with hyperparameter ranges for optimization
+# Add ItemKNN algorithm with hyperparameter ranges for optimization
 pipeline_builder.add_algorithm(
-    'NMF',
-    grid={
-        'num_components': [100, 200, 500, 1000],  # Range of number of components to test
-        'alpha': [0, 0.001, 0.01, 0.1],
-        'seed': [42]
-    }
+    'EASE'
 )
 
 # Set NDCGK as the optimization metric to evaluate at K=10
@@ -215,13 +210,14 @@ metric_results = pipeline.get_metrics()
 print("Metric Results:")
 print(metric_results)
 
+"""
 # Print the best hyperparameters
 print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
-
+"""
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "nmf_video_games"
+key_name = "ease_grocery_and_gourmet_food"
 
 from filelock import FileLock
 import os

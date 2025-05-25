@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
+
 from lenskit.algorithms import Recommender
-from lenskit.algorithms.als import ImplicitMF
+from lenskit.algorithms.implicit import BPR
 from lenskit import batch, topn, util
 import pandas as pd
+import numpy as np
 import joblib
 import gzip
 import json
 from lenskit import crossfold as xf
 import seedbank
-import numpy as np
 
 class nDCG_LK:
     def __init__(self, n, top_items, test_items):
@@ -46,19 +47,21 @@ class nDCG_LK:
 
 seedbank.initialize(42)
 
+# Function to load the JSON data
+def load_json_data(file_path, chunksize=10000):
+    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
+    return pd.concat(chunks, ignore_index=True)
 
-# Load and preprocess ratings data
-file_path = r'beauty_products_dataset\beauty_products_dataset.csv'
-ratings = pd.read_csv(file_path, sep=',', encoding='latin-1',
-                      usecols=['UserId', 'ProductId', 'Rating'])
+# Load and preprocess the dataset
+file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
+ratings = load_json_data(file_path)
 
-ratings = ratings.rename(columns={'UserId': 'user', 'ProductId': 'item', 'Rating': 'rating'})
+ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user', 'item', 'rating']]
-print(ratings.head())
 
 # Convert user and item IDs to integers
 ratings['user'], user_index = pd.factorize(ratings['user'])
@@ -121,12 +124,18 @@ def prune_10_core(data):
         data = data[data['item'].isin(valid_items)]
 
         # Check if no more pruning is needed
+        user_counts = data['user'].value_counts()
+        item_counts = data['item'].value_counts()
         if all(user_counts >= 10) and all(item_counts >= 10):
             break
     return data
 
 # Apply 10-core pruning
 ratings = prune_10_core(ratings)
+
+# Für BPR in implicit feedback Format umwandeln (Interaktionen mit rating > threshold werden als positiv betrachtet)
+# Alternativ können Sie alle Ratings auf 1 setzen
+# ratings['rating'] = 1.0  # Für implicit feedback
 
 # Inspect the pruned ratings data
 print("\nAfter Pruning:")
@@ -155,13 +164,9 @@ train_data = pd.concat(train_parts)
 final_test_data = pd.concat(test_parts)
 
 # Check and print the number of interactions and users in each set
-
 print("Train Data - Number of Interactions:", len(train_data))
-
 print("Final Test Data - Number of Interactions:", len(final_test_data))
-
 print("Train Data - Number of Users:", train_data['user'].nunique())
-
 print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
 
 # Split train data into train and validation sets
@@ -186,7 +191,6 @@ print("Final Test Data - Number of Interactions:", len(final_test_data))
 print("Pure Train Data - Number of Users:", pure_train_data['user'].nunique())
 print("Validation Data - Number of Users:", validation_data['user'].nunique())
 print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
-
 
 # Downsample the training set to different% of interactions for each user using xf.SampleFrac
 ##########################################################################
@@ -234,55 +238,45 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     mean_ndcg = total_ndcg / len(users)
     return recs, mean_ndcg
 
-# Perform hyperparameter tuning on the validation set and compute nDCG
-results = []
-best_f = None
-best_mean_ndcg = -float('inf')
+# BPR-Algorithmus mit Hyperparametern
+# factors: Anzahl der latenten Faktoren (Embedding-Dimension)
+# regularization: Regularisierungsparameter
+# learning_rate: Lernrate
+# iterations: Anzahl der Iterationen
+algo_bpr = BPR(
+    factors=50,            # Latente Faktoren (Embedding-Dimension)
+    regularization=0.01,   # Regularisierung
+    learning_rate=0.05,    # Lernrate
+    iterations=100        # Anzahl der Iterationen
+)
 
-# List of feature counts to try
-features_values = [8, 16, 32, 64]
+# Validierung durchführen und nDCG berechnen
+valid_recs, mean_ndcg = evaluate_with_ndcg('BPR', algo_bpr, downsampled_train_data, validation_data)
+print(f"NDCG mean for validation set: {mean_ndcg:.4f}")
 
-# Iterate over each K value
-for f in features_values:
-    seedbank.initialize(42)
-    algo = ImplicitMF(features=f, iterations=10, reg=0.1)
+# Algorithmus auf vollständigen Trainingsdaten für finalen Test trainieren
+final_algo = BPR(
+    factors=50,
+    regularization=0.01,
+    learning_rate=0.05,
+    iterations=100
+)
 
-    valid_recs, mean_ndcg = evaluate_with_ndcg('ImplicitMF', algo, downsampled_train_data, validation_data)
-    results.append({'features': f, 'Mean nDCG': mean_ndcg})
-
-    if mean_ndcg > best_mean_ndcg:
-        best_mean_ndcg = mean_ndcg
-        best_f = f
-
-print("Results:")
-for result in results:
-    print(f"features = {result['features']}: Mean nDCG = {result['Mean nDCG']:.4f}")
-
-print(f"\nBest f: {best_f} (Mean nDCG = {best_mean_ndcg:.4f})")
-
-
-# Fit the algorithm on the full training data with the best features
-final_algo = ImplicitMF(features=best_f, iterations=10, reg=0.1)
-
-# Use evaluate_with_ndcg to get recommendations and mean nDCG
-final_recs, mean_ndcg = evaluate_with_ndcg('ImplicitMF', final_algo, downsampled_train_data, final_test_data)
-
+# evaluate_with_ndcg verwenden, um Empfehlungen und mittlere nDCG zu erhalten
+final_recs, mean_ndcg = evaluate_with_ndcg('BPR', final_algo, downsampled_train_data, final_test_data)
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
-ndcg_value = mean_ndcg
-key_name = "implicitmf_beauty_products"
-
 from filelock import FileLock
 import os
 import json
 
-
 output_file = "metric_results.json"
 lock_file = output_file + ".lock"
 fraction_key = str(downsample_fraction)
+ndcg_value = float(mean_ndcg)
 
-#Mit lock wird es gesichert
+# Mit lock wird es gesichert
 with FileLock(lock_file):
     # Datei lesen und schreiben
     if os.path.exists(output_file):
@@ -296,10 +290,10 @@ with FileLock(lock_file):
     else:
         content = {}
 
-    if key_name not in content:
-        content[key_name] = {}
+    if "grocery_and_gourmet_food" not in content:
+        content["grocery_and_gourmet_food"] = {}
 
-    content[key_name][fraction_key] = ndcg_value
+    content["grocery_and_gourmet_food"][fraction_key] = ndcg_value
 
     with open(output_file, "w") as f:
         json.dump(content, f, indent=4)

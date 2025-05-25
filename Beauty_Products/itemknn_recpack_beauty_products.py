@@ -14,7 +14,7 @@ np.random.seed(42)
 # Load and preprocess ratings data
 # Load and preprocess ratings data
 file_path = r'beauty_products_dataset\beauty_products_dataset.csv'
-ratings = pd.read_csv(file_path, sep=';', encoding='latin-1',
+ratings = pd.read_csv(file_path, sep=',', encoding='latin-1',
                       usecols=['UserId', 'ProductId', 'Rating'])
 ratings = ratings.rename(columns={'UserId': 'user_id', 'ProductId': 'item_id', 'Rating': 'rating'})
 
