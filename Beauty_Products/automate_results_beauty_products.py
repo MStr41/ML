@@ -7,20 +7,22 @@ env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
 
 # List of script files to run
 script_paths = [
-    "ease_goodreads_poetry.py",
-    "funksvd_goodreads_poetry.py",
-    "implicitmf_goodreads_poetry.py",
-    "itemknn_lenskit_goodreads_poetry.py",
-    "itemknn_recpack_goodreads_poetry.py",
-    "kunn_goodreads_poetry.py",
-    "nmf_goodreads_poetry.py",
-    "popular_goodreads_poetry.py",
-    "popularity_goodreads_poetry.py",
-    "random_goodreads_poetry.py",
-    "slim_goodreads_poetry.py",
-    "svd_goodreads_poetry.py",
-    "svditemtoitem_goodreads_poetry.py",
-    "userknn_goodreads_poetry.py"
+    "bias_beauty_products.py",
+    "bpr_beauty_products.py",
+    "ease_beauty_products.py",
+    "funksvd_beauty_products.py",
+    "implicitmf_beauty_products.py",
+    "itemknn_lenskit_beauty_products.py",
+    "itemknn_recpack_beauty_products.py",
+    "kunn_beauty_products.py",
+    "nmf_beauty_products.py",
+    "popular_beauty_products.py",
+    "popularity_beauty_products.py",
+    "random_beauty_products.py",
+    "slim_beauty_products.py",
+    "svd_beauty_products.py",
+    "svditemtoitem_beauty_products.py",
+    "userknn_beauty_products.py"
 ]
 
 # Fractions to try: 0.1, 0.2, ..., 1.0

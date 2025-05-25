@@ -19,7 +19,7 @@ np.random.seed(42)
 file_path = 'goodreads_reviews_poetry.json.gz'
 ratings = load_json_data(file_path)
 print(len(ratings))
-ratings = ratings.rename(columns={'user_id': 'user', 'book_id': 'item', 'rating': 'rating'})
+ratings = ratings.rename(columns={'user_id': 'user_id', 'book_id': 'item_id', 'rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 
 # Convert 'rating' column to float

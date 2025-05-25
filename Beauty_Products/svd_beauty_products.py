@@ -1,26 +1,20 @@
-# -*- coding: utf-8 -*-
 import recpack.pipelines as pipelines
 from recpack.scenarios import WeakGeneralization
 from recpack.preprocessing.filters import MinItemsPerUser, MinUsersPerItem, Deduplicate
 import numpy as np
 import pandas as pd
 import joblib
-import gzip
 import json
 from recpack.preprocessing.preprocessors import DataFramePreprocessor
 
-
-# Function to load the JSON data
-def load_json_data(file_path, chunksize=10000):
-    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
-    return pd.concat(chunks, ignore_index=True)
 # Set random seed for reproducibility
 np.random.seed(42)
 # Load and preprocess ratings data
-file_path = 'goodreads_reviews_poetry.json.gz'
-ratings = load_json_data(file_path)
-print(len(ratings))
-ratings = ratings.rename(columns={'user_id': 'user_id', 'book_id': 'item_id', 'rating': 'rating'})
+file_path = r'beauty_products_dataset\beauty_products_dataset.csv'
+ratings = pd.read_csv(file_path, sep=';', encoding='latin-1',
+                      usecols=['UserId', 'ProductId', 'Rating'])
+
+ratings = ratings.rename(columns={'UserId': 'user_id', 'ProductId': 'item_id', 'Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 
 # Convert 'rating' column to float
@@ -28,7 +22,7 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user_id', 'item_id', 'rating']]
 print(ratings.head())
-print(len(ratings))
+
 
 # Convert user and item IDs to integers
 ratings['user_id'], user_index = pd.factorize(ratings['user_id'])
@@ -159,6 +153,7 @@ print("Number of unique items in test set:", len(test_out_interactions.active_it
 
 # Downsampling training set (Again, fraction value is different to maintatin the 50-50 split ration in this case correctly (due to rounding up effect))
 # Amazon_Toys and Games:  10% = 0.072....20% = 0.166....30% = 0.260....40% = 0.364....50% = 0.461....60% = 0.560....70% = 0.665....80% = 0.760....90% = 0.875...100% = 1.0
+#fraction value can be managed from another python code to automate the values
 ##########################################################################
 import sys
 try:
@@ -187,9 +182,13 @@ pipeline_builder.set_test_data((downsampled_train_interactions, test_out_interac
 pipeline_builder.set_validation_training_data(downsampled_train_interactions)
 pipeline_builder.set_validation_data((downsampled_train_interactions, valid_interactions))
 
-# Add ItemKNN algorithm with hyperparameter ranges for optimization
+# Add algorithm with hyperparameter ranges for optimization
 pipeline_builder.add_algorithm(
-    'SLIM'
+    'SVD',
+    grid={
+        'num_components': [20, 30, 60, 80, 100, 200, 300, 400, 500, 600, 800, 1000],  # Range of number of components to test
+        'seed': [42]
+    }
 )
 
 # Set NDCGK as the optimization metric to evaluate at K=10
@@ -211,14 +210,13 @@ metric_results = pipeline.get_metrics()
 print("Metric Results:")
 print(metric_results)
 
-"""
 # Print the best hyperparameters
 print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
-"""
+
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "slim_goodreads_poetry"
+key_name = "svd_beauty_products"
 
 from filelock import FileLock
 import os

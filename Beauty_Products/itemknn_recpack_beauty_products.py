@@ -9,18 +9,15 @@ import gzip
 import json
 from recpack.preprocessing.preprocessors import DataFramePreprocessor
 
-
-# Function to load the JSON data
-def load_json_data(file_path, chunksize=10000):
-    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
-    return pd.concat(chunks, ignore_index=True)
 # Set random seed for reproducibility
 np.random.seed(42)
 # Load and preprocess ratings data
-file_path = 'goodreads_reviews_poetry.json.gz'
-ratings = load_json_data(file_path)
-print(len(ratings))
-ratings = ratings.rename(columns={'user_id': 'user_id', 'book_id': 'item_id', 'rating': 'rating'})
+# Load and preprocess ratings data
+file_path = r'beauty_products_dataset\beauty_products_dataset.csv'
+ratings = pd.read_csv(file_path, sep=';', encoding='latin-1',
+                      usecols=['UserId', 'ProductId', 'Rating'])
+ratings = ratings.rename(columns={'UserId': 'user_id', 'ProductId': 'item_id', 'Rating': 'rating'})
+
 ratings = ratings.dropna(subset=['rating'])
 
 # Convert 'rating' column to float
@@ -28,7 +25,6 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user_id', 'item_id', 'rating']]
 print(ratings.head())
-print(len(ratings))
 
 # Convert user and item IDs to integers
 ratings['user_id'], user_index = pd.factorize(ratings['user_id'])
@@ -189,7 +185,10 @@ pipeline_builder.set_validation_data((downsampled_train_interactions, valid_inte
 
 # Add ItemKNN algorithm with hyperparameter ranges for optimization
 pipeline_builder.add_algorithm(
-    'SLIM'
+    'ItemKNN',
+    grid={
+        'K': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200],  # Range of K values for optimization
+    }
 )
 
 # Set NDCGK as the optimization metric to evaluate at K=10
@@ -211,14 +210,13 @@ metric_results = pipeline.get_metrics()
 print("Metric Results:")
 print(metric_results)
 
-"""
 # Print the best hyperparameters
 print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
-"""
+
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "slim_goodreads_poetry"
+key_name = "itemknn_recpack_beauty_products"
 
 from filelock import FileLock
 import os
