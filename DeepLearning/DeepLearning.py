@@ -5,6 +5,7 @@ from msilib import Directory
 import sys
 import os
 from pathlib import Path
+from matplotlib.lines import lineStyles
 import pandas as pd
 import json
 import numpy as np
@@ -24,53 +25,36 @@ from keras.saving import register_keras_serializable
 import matplotlib.pyplot as plt
 
 
-
-
-
 directory = os.getcwd()
-
-#dataPath = os.path.join(directory, 'bla.parquet')
-
 dataPath = os.path.join(directory, 'time_series_15min_singleindex.csv')
-
 data = pd.read_csv(dataPath, delimiter=",")
-
-
 data.rename(columns={'utc_timestamp': 'time'}, inplace=True)
 data.rename(columns={'DE_tennet_wind_generation': 'value'}, inplace=True)
 data = data.dropna(subset=['value'])
 
-
 #Datei bearbeiten
-
 data['value'] = pd.to_numeric(data['value'], errors='coerce')
-
 data = data.dropna(subset=['value'])
-
 nameModell = "DeepLearning" + "time_series_15min_singleindex.csv" + ".keras"
-
 pathFolder = os.path.join(directory, nameModell)
 
 #Zeitstempel in numerische Werte umwandeln, falls sie noch nicht im richtigen Format sind
 data['time'] = pd.to_datetime(data['time'])
-
 data['time'] = data['time'].astype(np.int64) // 10**6
 
-
-#all_losses_mean = []
-#all_val_losses_mean = []
 
 k = 5
 all_losses_mean = pd.DataFrame()
 all_val_losses_mean = pd.DataFrame()
+path_csv_loss = os.path.join(directory, 'csv_loss.csv')
+path_csv_val_loss = os.path.join(directory, 'csv_val_loss.csv')
 
-if 1 == 1:
+if not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
 
     for i in range(1, 11, 1):
 
         #Downsampling
         percent = i/10
-        
         print(len(data))
         downSampling = int(len(data) * percent)
         dataDownSampling = data.iloc[:downSampling]
@@ -78,8 +62,6 @@ if 1 == 1:
 
         all_losses_collect = pd.DataFrame()
         all_val_losses_collect = pd.DataFrame()
-
-        
 
         for j in range(0,k,1):
             print(percent)
@@ -176,33 +158,32 @@ if 1 == 1:
             
     #Daten in CSV-Datei speichern
     all_losses_mean.to_csv('csv_loss.csv', index=True)
-
     all_val_losses_mean.to_csv('csv_val_loss.csv', index=True)
 
-    path_csv_loss = os.path.join(directory, 'csv_loss.csv')
-    path_csv_val_loss = os.path.join(directory, 'csv_val_loss.csv')
+    
+csv_loss = pd.read_csv('csv_loss.csv', delimiter=",")
+csv_val_loss = pd.read_csv('csv_val_loss.csv', delimiter=",")
 
-    #Plotten von loss und val_loss
-    plt.figure(figsize=(10, 6))
-    if 0==1:#os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss):
-        csv_loss = pd.read_csv('csv_loss.csv', delimiter=",")
-        csv_val_loss = pd.read_csv('csv_val_loss.csv', delimiter=",")
-        #plt.plot(csv_loss, label= 'Trainings-Loss ' + all_losses_mean.columns[0])
-        for col in all_losses_mean.columns:
-            plt.plot(all_losses_mean.index, all_losses_mean[col], label= 'Trainings-Loss ' + all_losses_mean.columns[0])
-        plt.plot(csv_val_loss, label='Validierungs-Loss ' + all_val_losses_mean.columns[0])
+#Plotten von loss und val_loss
 
-    else:
-        plt.plot(all_losses_mean, label= 'Trainings-Loss ' + all_losses_mean.columns[0])
-        plt.plot(all_val_losses_mean, label='Validierungs-Loss ' + all_val_losses_mean.columns[0])
-    #plt.plot(history.history['loss'], label='Trainings-Loss')
-    #plt.plot(history.history['val_loss'], label='Validierungs-Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss (RMSE)')
-    plt.title('Trainings- und Validierungsverlust')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+for k in range(0,2,1):
+        plt.figure(figsize=(10, 5))
+        for i in range(1+k*1,len(csv_loss.columns),2):
+            plt.plot(csv_loss.index, csv_loss.iloc[:,i], label= 'Trainings-Loss ' + csv_loss.columns[i],linestyle='-')
+        for j in range(1+k*1,len(csv_val_loss.columns),2):
+           plt.plot(csv_val_loss.index, csv_val_loss.iloc[:,j], label= 'Validierungs-Loss ' + csv_val_loss.columns[j], linestyle='-')
 
-    #print(prediction)
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss (RMSE)')
+        plt.title('Trainings- und Validierungsverlust')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(fname=f'Trainings- und Validierungsverlust_{k}')
+        plt.show(block=False)
+        plt.pause(0.1)
+
+plt.show()
+
+
+#print(prediction)
