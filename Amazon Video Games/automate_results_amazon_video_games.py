@@ -7,7 +7,7 @@ env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
 
 # List of script files to run
 script_paths = [
-    "implicitmf_book_crossing.py"
+    "multvae_video_games.py"
 ]
 
 # Fractions to try: 0.1, 0.2, ..., 1.0

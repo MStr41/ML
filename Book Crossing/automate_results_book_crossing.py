@@ -7,7 +7,10 @@ env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
 
 # List of script files to run
 script_paths = [
-    "svditemtoitem_video_games.py"
+    "kunn_book_crossing.py",
+    "svditemtoitem_book_crossing.py",
+    "bpr_book_crossing.py"
+
 ]
 
 # Fractions to try: 0.1, 0.2, ..., 1.0
