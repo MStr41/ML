@@ -7,7 +7,23 @@ env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
 
 # List of script files to run
 script_paths = [
-    "multvae_video_games.py"
+    "bias_video_games.py",
+    "biasedmf_video_games.py",
+    "bpr_video_games.py",
+    "ease_video_games.py",
+    "funksvd_video_games.py",
+    "implicitmf_video_games.py",
+    "itemknn_lenskit_video_games.py",
+    "itemknn_recpack_video_games.py",
+    "kunn_video_games.py",
+    "nmf_video_games.py",
+    "popular_video_games.py",
+    "popularity_video_games.py",
+    "random_video_games.py",
+    "slim_video_games.py",
+    "svd_video_games.py",
+    "svditemtoitem_video_games.py",
+    "userknn_video_games.py"
 ]
 
 # Fractions to try: 0.1, 0.2, ..., 1.0
