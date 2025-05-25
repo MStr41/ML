@@ -7,24 +7,7 @@ env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
 
 # List of script files to run
 script_paths = [
-    "bias_book_crossing.py",
-    "biasedmf_book_crossing.py",
-    "bpr_book_crossing.py",
-    "BX_ItemKNN.py",
-    "ease_book_crossing.py",
-    "funksvd_book_crossing.py",
-    "implicitmf_book_crossing.py",
-    "itemknn_recpack_book_crossing.py",
-    "kunn_book_crossing.py",
-    "nmf_book_crossing.py",
-    "popular_book_crossing.py",
-    "popularity_book_crossing.py",
-    "random_book_crossing.py",
-    "slim_book_crossing.py",
-    "SVD_Book_Crossing.py",
-    "svditemtoitem_book_crossing.py",
-    "userknn_book_crossing.py"
-
+    "multvae_video_games.py"
 ]
 
 # Fractions to try: 0.1, 0.2, ..., 1.0
