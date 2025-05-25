@@ -186,7 +186,7 @@ pipeline_builder.set_validation_data((downsampled_train_interactions, valid_inte
 pipeline_builder.add_algorithm(
     'SVD',
     grid={
-        'num_components': [20, 30, 60, 80, 100, 200, 300, 400, 500, 600, 800, 1000],  # Range of number of components to test
+        'num_components': [20, 30, 60, 80, 100, 200, 300, 400],  # Range of number of components to test
         'seed': [42]
     }
 )
