@@ -190,11 +190,7 @@ pipeline_builder.set_validation_data((downsampled_train_interactions, valid_inte
 
 # Add algorithm with hyperparameter ranges for optimization
 pipeline_builder.add_algorithm(
-    'SVD',
-    grid={
-        'num_components': [20, 30, 60, 80, 100, 200, 300, 400, 500, 600, 800, 1000],  # Range of number of components to test
-        'seed': [42]
-    }
+    'SVDItemToItem'
 )
 
 # Set NDCGK as the optimization metric to evaluate at K=10
@@ -215,14 +211,15 @@ metric_results = pipeline.get_metrics()
 # Print the metric results
 print("Metric Results:")
 print(metric_results)
-
+"""
 # Print the best hyperparameters
 print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
+"""
 
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "svd_video_games"
+key_name = "svditemtoitem_video_games"
 
 from filelock import FileLock
 import os

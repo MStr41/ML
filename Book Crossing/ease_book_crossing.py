@@ -209,13 +209,15 @@ metric_results = pipeline.get_metrics()
 print("Metric Results:")
 print(metric_results)
 
+"""
 # Print the best hyperparameters
 print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
+"""
 
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "itemknn_recpack_book_crossing"
+key_name = "ease_book_crossing"
 
 from filelock import FileLock
 import os
