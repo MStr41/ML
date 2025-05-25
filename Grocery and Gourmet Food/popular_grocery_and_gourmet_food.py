@@ -54,7 +54,7 @@ def load_json_data(file_path, chunksize=10000):
 # Load and preprocess ratings data
 file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
 ratings = load_json_data(file_path)
-print(len(ratings))
+
 ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
@@ -62,7 +62,7 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user', 'item', 'rating']]
 print(ratings.head())
-print(len(ratings))
+
 
 # Convert user and item IDs to integers
 ratings['user'], user_index = pd.factorize(ratings['user'])
