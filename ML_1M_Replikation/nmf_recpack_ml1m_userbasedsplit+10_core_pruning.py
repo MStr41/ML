@@ -169,7 +169,7 @@ print("Number of unique items in test set:", len(test_out_interactions.active_it
 
 # Downsampling training set (Again, fraction value is different to maintatin the 50-50 split ration in this case correctly (due to rounding up effect))
 # Amazon_Toys and Games:  10% = 0.096....20% = 0.196....30% = 0.296....40% = 0.396....50% = 0.497....60% = 0.596....70% = 0.696....80% = 0.796....90% = 0.896...100% = 1.0
-downsample_fraction = 1.0
+downsample_fraction = 0.096
 additional_split_scenario = WeakGeneralization(frac_data_in=downsample_fraction, validation=False, seed=42)
 additional_split_scenario.split(train_interactions)
 
