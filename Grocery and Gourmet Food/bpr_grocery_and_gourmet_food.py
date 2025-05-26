@@ -290,7 +290,7 @@ with FileLock(lock_file):
     else:
         content = {}
 
-    if "grocery_and_gourmet_food" not in content:
+    if "bpr_grocery_and_gourmet_food" not in content:
         content["bpr_grocery_and_gourmet_food"] = {}
 
     content["bpr_grocery_and_gourmet_food"][fraction_key] = ndcg_value
