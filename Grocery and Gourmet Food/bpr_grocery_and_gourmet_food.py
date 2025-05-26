@@ -291,9 +291,9 @@ with FileLock(lock_file):
         content = {}
 
     if "grocery_and_gourmet_food" not in content:
-        content["grocery_and_gourmet_food"] = {}
+        content["bpr_grocery_and_gourmet_food"] = {}
 
-    content["grocery_and_gourmet_food"][fraction_key] = ndcg_value
+    content["bpr_grocery_and_gourmet_food"][fraction_key] = ndcg_value
 
     with open(output_file, "w") as f:
         json.dump(content, f, indent=4)
