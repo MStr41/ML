@@ -12,6 +12,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input, Dense, Dropout
@@ -22,7 +23,7 @@ from tensorflow.keras.metrics import MeanAbsolutePercentageError
 from tensorflow.keras import regularizers
 from keras.models import load_model
 from keras.saving import register_keras_serializable
-import matplotlib.pyplot as plt
+
 
 
 directory = os.getcwd()
