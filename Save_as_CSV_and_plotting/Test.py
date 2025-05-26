@@ -24,15 +24,15 @@ with open (jsonPath) as file:
 
     plt.figure(figsize=(10, 5))
        
-    plt.plot((df.index), df, label= df.columns,linestyle='-')
+    plt.plot((df.index), df, label= df.columns, marker='o')
 
-    plt.xlabel('Prozentualer Anteil')
-    plt.ylabel('Quali')
-    plt.title('Trainings- und Validierungsverlust')
+    plt.xlabel('Percentage of Dataset Used')
+    plt.ylabel('nDCG @ 10 Score')
+    plt.title('Amazon toys and Games')
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-       #plt.savefig(fname=f'Trainings- und Validierungsverlust_{k}')
+    #plt.savefig(fname=f'Trainings- und Validierungsverlust_{k}')
     plt.show(block=False)
     plt.pause(0.1)
        
