@@ -53,11 +53,12 @@ def load_json_data(file_path, chunksize=10000):
     return pd.concat(chunks, ignore_index=True)
 
 # Load and preprocess ratings data
-file_path = 'goodreads_reviews_poetry.json.gz'
+file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
 ratings = load_json_data(file_path)
 
-ratings = ratings.rename(columns={'user_id': 'user', 'book_id': 'item', 'rating': 'rating'})
+ratings = ratings.rename(columns={'reviewerID': 'user_id', 'asin': 'item_id', 'overall': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
+
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
