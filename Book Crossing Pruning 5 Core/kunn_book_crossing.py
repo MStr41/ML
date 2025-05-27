@@ -12,8 +12,8 @@ from recpack.preprocessing.preprocessors import DataFramePreprocessor
 # Set random seed for reproducibility
 np.random.seed(42)
 # Load and preprocess ratings data
-file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
-ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
+file_path = r'Book_Crossing_Dataset/BX-Book-Ratings.csv'
+ratings = pd.read_csv('Book_Crossing_Dataset/BX-Book-Ratings.csv', sep=';', encoding='latin-1',
                       usecols=['User-ID', 'ISBN', 'Book-Rating'])
 
 
@@ -77,25 +77,24 @@ print("Number of duplicate ratings (same user, same item) after cleaning:", dupl
 
 print(len(ratings))
 
-# 10-core pruning
-def prune_10_core(data):
+def prune_5_core(data):
     while True:
-        # Filter users with fewer than 10 interactions
-        user_counts = data['user_id'].value_counts()
-        valid_users = user_counts[user_counts >= 10].index
-        data = data[data['user_id'].isin(valid_users)]
+        # Filter users with fewer than 5 interactions
+        user_counts = data['user'].value_counts()
+        valid_users = user_counts[user_counts >= 5].index
+        data = data[data['user'].isin(valid_users)]
 
-        # Filter items with fewer than 10 interactions
-        item_counts = data['item_id'].value_counts()
-        valid_items = item_counts[item_counts >= 10].index
-        data = data[data['item_id'].isin(valid_items)]
+        # Filter items with fewer than 5 interactions
+        item_counts = data['item'].value_counts()
+        valid_items = item_counts[item_counts >= 5].index
+        data = data[data['item'].isin(valid_items)]
 
         # Check if no more pruning is needed
-        if all(user_counts >= 10) and all(item_counts >= 10):
+        if all(user_counts >= 5) and all(item_counts >= 5):
             break
     return data
-# Apply 10-core pruning
-ratings = prune_10_core(ratings)
+
+ratings = prune_5_core(ratings)
 
 print(len(ratings))
 
@@ -217,7 +216,7 @@ print(pipeline.optimisation_results)
 
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "kunn_book_crossing"
+key_name = "kunn_book_crossing_prune5"
 
 from filelock import FileLock
 import os

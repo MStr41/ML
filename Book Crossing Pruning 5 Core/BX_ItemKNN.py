@@ -11,7 +11,7 @@ import sys
 # -------------------------------
 
 # Load the Book-Ratings file
-ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
+ratings = pd.read_csv('Book_Crossing_Dataset/BX-Book-Ratings.csv', sep=';', encoding='latin-1',
                       usecols=['User-ID', 'ISBN', 'Book-Rating'])
 
 # Rename columns
@@ -28,22 +28,24 @@ ratings['item'], item_index = pd.factorize(ratings['item'])
 # 2. 10-CORE PRUNING
 # -------------------------------
 
-def prune_10_core(data):
+def prune_5_core(data):
     while True:
+        # Filter users with fewer than 5 interactions
         user_counts = data['user'].value_counts()
-        item_counts = data['item'].value_counts()
-
-        valid_users = user_counts[user_counts >= 10].index
-        valid_items = item_counts[item_counts >= 10].index
-
+        valid_users = user_counts[user_counts >= 5].index
         data = data[data['user'].isin(valid_users)]
+
+        # Filter items with fewer than 5 interactions
+        item_counts = data['item'].value_counts()
+        valid_items = item_counts[item_counts >= 5].index
         data = data[data['item'].isin(valid_items)]
 
-        if data['user'].value_counts().min() >= 10 and data['item'].value_counts().min() >= 10:
+        # Check if no more pruning is needed
+        if all(user_counts >= 5) and all(item_counts >= 5):
             break
     return data
 
-ratings = prune_10_core(ratings)
+ratings = prune_5_core(ratings)
 
 print("Users:", ratings['user'].nunique())
 print("Items:", ratings['item'].nunique())
@@ -178,7 +180,7 @@ print(f"\n Final Test Set nDCG@10: {final_test_ndcg:.4f}")
 
 #################################################
 ndcg_value = final_test_ndcg
-key_name = "item_knn_book_crossing"
+key_name = "item_knn_book_crossing_prune5"
 
 from filelock import FileLock
 import os

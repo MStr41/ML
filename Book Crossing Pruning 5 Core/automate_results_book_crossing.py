@@ -16,7 +16,7 @@ script_paths = [
     "implicitmf_book_crossing.py",
     "itemknn_recpack_book_crossing.py",
     "kunn_book_crossing.py",
-    "nmf_book_crossing.py",
+    #"nmf_book_crossing.py",
     "popular_book_crossing.py",
     "popularity_book_crossing.py",
     "random_book_crossing.py",
