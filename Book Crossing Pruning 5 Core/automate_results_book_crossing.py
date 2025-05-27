@@ -3,7 +3,7 @@ import json
 import os
 
 # Python executable path of the conda environment
-env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
+env_python = '/home/frederic/PycharmProjects/Bachelor/venv/bin/python'
 
 # List of script files to run
 script_paths = [
@@ -16,7 +16,7 @@ script_paths = [
     "implicitmf_book_crossing.py",
     "itemknn_recpack_book_crossing.py",
     "kunn_book_crossing.py",
-    "nmf_book_crossing.py",
+    #"nmf_book_crossing.py",
     "popular_book_crossing.py",
     "popularity_book_crossing.py",
     "random_book_crossing.py",
