@@ -51,7 +51,7 @@ file_path = r'Book_Crossing_Dataset\BX-Book-Ratings.csv'
 ratings = pd.read_csv('Book_Crossing_Dataset\BX-Book-Ratings.csv', sep=';', encoding='latin-1',
                       usecols=['User-ID', 'ISBN', 'Book-Rating'])
 
-ratings = ratings.rename(columns={'User-ID': 'user_id', 'ISBN': 'item_id', 'Book-Rating': 'rating'})
+ratings = ratings.rename(columns={'User-ID': 'user', 'ISBN': 'item', 'Book-Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)

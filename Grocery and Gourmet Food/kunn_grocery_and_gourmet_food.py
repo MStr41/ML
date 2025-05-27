@@ -218,7 +218,7 @@ print(pipeline.optimisation_results)
 
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "grocery_and_gourmet_food"
+key_name = "kunn_grocery_and_gourmet_food"
 
 from filelock import FileLock
 import os

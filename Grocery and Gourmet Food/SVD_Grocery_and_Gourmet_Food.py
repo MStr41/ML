@@ -200,7 +200,7 @@ pipeline_builder.set_validation_data((downsampled_train_interactions, valid_inte
 pipeline_builder.add_algorithm(
     'SVD',
     grid={
-        'num_components': [20, 30, 60, 80, 100, 200, 300, 400, 500, 600, 800, 1000],  # Range of number of components to test
+        'num_components': [20, 30, 60, 80, 100, 200, 300, 400],  # Range of number of components to test
         'seed': [42]
     }
 )
@@ -229,7 +229,38 @@ print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
 
 
-#############################################
-with open("metric_results.json", "w") as f: 
-    json.dump(metric_results.to_dict(), f)
-#############################################
+#################################################
+ndcg_value = metric_results["NDCGK_10"].values[0]
+key_name = "svd_grocery_and_gourmet_food"
+
+from filelock import FileLock
+import os
+import json
+
+
+output_file = "metric_results.json"
+lock_file = output_file + ".lock"
+fraction_key = str(downsample_fraction)
+
+#Mit lock wird es gesichert
+with FileLock(lock_file):
+    # Datei lesen und schreiben
+    if os.path.exists(output_file):
+        with open(output_file, "r") as f:
+            try:
+                content = json.load(f)
+                if not isinstance(content, dict):
+                    content = {}
+            except json.JSONDecodeError:
+                content = {}
+    else:
+        content = {}
+
+    if key_name not in content:
+        content[key_name] = {}
+
+    content[key_name][fraction_key] = ndcg_value
+
+    with open(output_file, "w") as f:
+        json.dump(content, f, indent=4)
+#################################################
