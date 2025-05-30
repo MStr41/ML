@@ -8,7 +8,7 @@ env_python = '/home/frederic/PycharmProjects/Bachelor/venv/bin/python'
 # List of script files to run
 script_paths = [
     "bias_book_crossing.py",
-    "biasedmf_book_crossing.py",
+    #"biasedmf_book_crossing.py",
     "bpr_book_crossing.py",
     "BX_ItemKNN.py",
     "ease_book_crossing.py",
