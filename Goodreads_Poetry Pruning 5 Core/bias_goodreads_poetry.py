@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from lenskit.algorithms import Recommender
-from lenskit.algorithms.als import BiasedMF
+from lenskit.algorithms.bias import Bias
 from lenskit import batch, topn, util
 import pandas as pd
 import joblib
@@ -53,12 +53,11 @@ def load_json_data(file_path, chunksize=10000):
     return pd.concat(chunks, ignore_index=True)
 
 # Load and preprocess ratings data
-file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
+file_path = 'goodreads_reviews_poetry.json.gz'
 ratings = load_json_data(file_path)
 
-ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
+ratings = ratings.rename(columns={'user_id': 'user', 'book_id': 'item', 'rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
-
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
@@ -113,26 +112,25 @@ print("Number of duplicate rows after cleaning:", duplicate_rows)
 duplicate_ratings = ratings.duplicated(subset=['user', 'item']).sum()
 print("Number of duplicate ratings (same user, same item) after cleaning:", duplicate_ratings)
 
-# 10-core pruning
-def prune_10_core(data):
+# 5-core pruning
+def prune_5_core(data):
     while True:
-        # Filter users with fewer than 10 interactions
+        # Filter users with fewer than 5 interactions
         user_counts = data['user'].value_counts()
-        valid_users = user_counts[user_counts >= 10].index
+        valid_users = user_counts[user_counts >= 5].index
         data = data[data['user'].isin(valid_users)]
 
-        # Filter items with fewer than 10 interactions
+        # Filter items with fewer than 5 interactions
         item_counts = data['item'].value_counts()
-        valid_items = item_counts[item_counts >= 10].index
+        valid_items = item_counts[item_counts >= 5].index
         data = data[data['item'].isin(valid_items)]
 
         # Check if no more pruning is needed
-        if all(user_counts >= 10) and all(item_counts >= 10):
+        if all(user_counts >= 5) and all(item_counts >= 5):
             break
     return data
 
-# Apply 10-core pruning
-ratings = prune_10_core(ratings)
+ratings = prune_5_core(ratings) 
 
 # Inspect the pruned ratings data
 print("\nAfter Pruning:")
@@ -227,7 +225,7 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10,n_jobs=1)
+    recs = batch.recommend(fittable, users, 10, n_jobs=1)
     recs['Algorithm'] = aname
 
     total_ndcg = 0
@@ -240,55 +238,27 @@ def evaluate_with_ndcg(aname, algo, train, valid):
     mean_ndcg = total_ndcg / len(users)
     return recs, mean_ndcg
 
-# Perform hyperparameter tuning on the validation set and compute nDCG
-results = []
-best_features = None
-best_iterations = None
-best_mean_ndcg = -float('inf')
+# Perform validation and compute nDCG
+algo_bias = Bias(damping = 1000)
+valid_recs, mean_ndcg = evaluate_with_ndcg('Bias', algo_bias, downsampled_train_data, validation_data)
+print(f"NDCG mean for validation set: {mean_ndcg:.4f}")
 
-feature_values = [50, 80, 90, 100, 120, 150, 200, 250, 300, 400, 500]  # Define a range of feature values to test
-iteration_values = [1, 5, 10, 20]  # Define a range of iteration values to test
+# Fit the algorithm on the full training data
+final_algo = Bias(damping = 1000)
 
-# Iterate over each iteration value and each feature value
-for iterations in iteration_values:
-    for features in feature_values:
-        seedbank.initialize(42)  # Reset the random seed for reproducibility
-        algo_als = BiasedMF(features=features, iterations=iterations, reg=0.1, damping=0, bias=False, method='cd', rng_spec=42)
-        # Evaluate the model and compute mean nDCG
-        valid_recs, mean_ndcg = evaluate_with_ndcg('ALS', algo_als, downsampled_train_data, validation_data)
-        results.append({'Features': features, 'Iterations': iterations, 'Mean nDCG': mean_ndcg})
-
-        # Check if the current combination is the best so far
-        if mean_ndcg > best_mean_ndcg:
-            best_mean_ndcg = mean_ndcg
-            best_features = features
-            best_iterations = iterations
-
-print("Results:")
-for result in results:
-    print(f"Features = {result['Features']}, Iterations = {result['Iterations']}: Mean nDCG = {result['Mean nDCG']:.4f}")
-
-print(f"\nBest Features: {best_features}, Best Iterations: {best_iterations} (Mean nDCG = {best_mean_ndcg:.4f})")
-
-# Fit the algorithm on the full training data with the best features
-final_algo  = BiasedMF(features= best_features, iterations=best_iterations, reg=0.1, damping=0, bias=False, method='cd', rng_spec=42)
 # Use evaluate_with_ndcg to get recommendations and mean nDCG
-final_recs, mean_ndcg = evaluate_with_ndcg('ALS', final_algo, downsampled_train_data, final_test_data)
-
+final_recs, mean_ndcg = evaluate_with_ndcg('Bias', final_algo, downsampled_train_data, final_test_data)
 print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
-ndcg_value = mean_ndcg
-key_name = "biasedmf_grocery_and_gourmet_food"
-
 from filelock import FileLock
 import os
 import json
 
-
 output_file = "metric_results.json"
 lock_file = output_file + ".lock"
 fraction_key = str(downsample_fraction)
+ndcg_value = float(mean_ndcg)
 
 #Mit lock wird es gesichert
 with FileLock(lock_file):
@@ -304,10 +274,10 @@ with FileLock(lock_file):
     else:
         content = {}
 
-    if key_name not in content:
-        content[key_name] = {}
+    if "bias_goodreads_poetry_5core" not in content:
+        content["bias_goodreads_poetry_5core"] = {}
 
-    content[key_name][fraction_key] = ndcg_value
+    content["bias_goodreads_poetry_5core"][fraction_key] = ndcg_value
 
     with open(output_file, "w") as f:
         json.dump(content, f, indent=4)

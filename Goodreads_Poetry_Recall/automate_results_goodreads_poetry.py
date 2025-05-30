@@ -5,23 +5,26 @@ import os
 # Python executable path of the conda environment
 env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
 
+
 # List of script files to run
 script_paths = [
-    "bias_video_games.py",
-    "bpr_video_games.py",
-    "ease_video_games.py",
-    "implicitmf_video_games.py",
-    "itemknn_lenskit_video_games.py",
-    "itemknn_recpack_video_games.py",
-    "kunn_video_games.py",
-    "popular_video_games.py",
-    "popularity_video_games.py",
-    "random_video_games.py",
-    "slim_video_games.py",
-    "svditemtoitem_video_games.py",
-    "userknn_video_games.py",
-    "svd_video_games.py",
-    "funksvd_video_games.py"
+    "bias_goodreads_poetry.py",
+    "bpr_goodreads_poetry.py",
+    "ease_goodreads_poetry.py",
+    "implicitmf_goodreads_poetry.py",
+    "itemknn_lenskit_goodreads_poetry.py",
+    "itemknn_recpack_goodreads_poetry.py",
+    "kunn_goodreads_poetry.py",
+    "popular_goodreads_poetry.py",
+    "popularity_goodreads_poetry.py",
+    "random_goodreads_poetry.py",
+    "slim_goodreads_poetry.py",
+    "svditemtoitem_goodreads_poetry.py",
+    "userknn_goodreads_poetry.py",
+    "svd_goodreads_poetry.py",
+    "biasedmf_goodreads_poetry",
+    "funksvd_goodreads_poetry.py",
+    "nmf_goodreads_poetry.py"
 ]
 
 # Fractions to try: 0.1, 0.2, ..., 1.0

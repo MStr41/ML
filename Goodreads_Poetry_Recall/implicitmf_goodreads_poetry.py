@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-
-from lenskit.algorithms import Recommender
-from lenskit.algorithms.als import BiasedMF
 from lenskit import batch, topn, util
 import pandas as pd
 import joblib
@@ -10,40 +7,15 @@ import json
 from lenskit import crossfold as xf
 import seedbank
 import numpy as np
+from lenskit.algorithms.als import ImplicitMF 
+from lenskit.algorithms import Recommender
 
-class nDCG_LK:
-    def __init__(self, n, top_items, test_items):
-        self.n = n
-        self.top_items = top_items
-        self.test_items = test_items
 
-    def _ideal_dcg(self):
-        iranks = np.zeros(self.n, dtype=np.float64)
-        iranks[:] = np.arange(1, self.n + 1)
-        idcg = np.cumsum(1.0 / np.log2(iranks + 1), axis=0)
-        if len(self.test_items) < self.n:
-            idcg[len(self.test_items):] = idcg[len(self.test_items) - 1]
-        return idcg[self.n - 1]
-
-    def calculate_dcg(self):
-        dcg = 0
-        for i, item in enumerate(self.top_items):
-            if item in self.test_items:
-                relevance = 1
-            else:
-                relevance = 0
-            rank = i + 1
-            contribution = relevance / np.log2(rank + 1)
-            dcg += contribution
-        return dcg
-
-    def calculate(self):
-        dcg = self.calculate_dcg()
-        ideal_dcg = self._ideal_dcg()
-        if ideal_dcg == 0:
-            return 0
-        ndcg = dcg / ideal_dcg
-        return ndcg
+def recall_at_k(top_items, test_items, k=10):
+    if len(test_items) == 0:
+        return 0.0
+    hits = sum([1 for item in top_items[:k] if item in test_items])
+    return hits / len(test_items)
 
 seedbank.initialize(42)
 
@@ -53,18 +25,17 @@ def load_json_data(file_path, chunksize=10000):
     return pd.concat(chunks, ignore_index=True)
 
 # Load and preprocess ratings data
-file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
+file_path = 'goodreads_reviews_poetry.json.gz'
 ratings = load_json_data(file_path)
-
-ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
+print(len(ratings))
+ratings = ratings.rename(columns={'user_id': 'user', 'book_id': 'item', 'rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
-
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user', 'item', 'rating']]
 print(ratings.head())
-
+print(len(ratings))
 
 # Convert user and item IDs to integers
 ratings['user'], user_index = pd.factorize(ratings['user'])
@@ -193,7 +164,6 @@ print("Pure Train Data - Number of Users:", pure_train_data['user'].nunique())
 print("Validation Data - Number of Users:", validation_data['user'].nunique())
 print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
 
-
 # Downsample the training set to different% of interactions for each user using xf.SampleFrac
 ##########################################################################
 import sys
@@ -222,64 +192,63 @@ print("Downsampled Train Data - Number of Users:", downsampled_train_data['user'
 print("Validation Data - Number of Users:", validation_data['user'].nunique())
 print("Final Test Data - Number of Users:", final_test_data['user'].nunique())
 
-def evaluate_with_ndcg(aname, algo, train, valid):
+#Evaluate with Recall instead of nDCG
+def evaluate_with_recall(aname, algo, train, valid, k=10):
     fittable = util.clone(algo)
     fittable = Recommender.adapt(fittable)
     fittable.fit(train)
     users = valid.user.unique()
-    recs = batch.recommend(fittable, users, 10,n_jobs=1)
+    recs = batch.recommend(fittable, users, k, n_jobs=1)
     recs['Algorithm'] = aname
 
-    total_ndcg = 0
+    total_recall = 0
     for user in users:
         user_recs = recs[recs['user'] == user]['item'].values
         user_truth = valid[valid['user'] == user]['item'].values
-        ndcg_score = nDCG_LK(10, user_recs, user_truth).calculate()
-        total_ndcg += ndcg_score
+        recall_score = recall_at_k(user_recs, user_truth, k)
+        total_recall += recall_score
 
-    mean_ndcg = total_ndcg / len(users)
-    return recs, mean_ndcg
+    mean_recall = total_recall / len(users)
+    return recs, mean_recall
 
-# Perform hyperparameter tuning on the validation set and compute nDCG
+# Perform hyperparameter tuning on the validation set and compute Recall
 results = []
-best_features = None
-best_iterations = None
+best_f = None
 best_mean_ndcg = -float('inf')
 
-feature_values = [50, 80, 90, 100, 120, 150, 200, 250, 300, 400, 500]  # Define a range of feature values to test
-iteration_values = [1, 5, 10, 20]  # Define a range of iteration values to test
+# List of feature counts to try
+features_values = [8, 16, 32, 64]
 
-# Iterate over each iteration value and each feature value
-for iterations in iteration_values:
-    for features in feature_values:
-        seedbank.initialize(42)  # Reset the random seed for reproducibility
-        algo_als = BiasedMF(features=features, iterations=iterations, reg=0.1, damping=0, bias=False, method='cd', rng_spec=42)
-        # Evaluate the model and compute mean nDCG
-        valid_recs, mean_ndcg = evaluate_with_ndcg('ALS', algo_als, downsampled_train_data, validation_data)
-        results.append({'Features': features, 'Iterations': iterations, 'Mean nDCG': mean_ndcg})
+# Iterate over each K value
+for f in features_values:
+    seedbank.initialize(42)
+    algo = ImplicitMF(features=f, iterations=10, reg=0.1)
 
-        # Check if the current combination is the best so far
-        if mean_ndcg > best_mean_ndcg:
-            best_mean_ndcg = mean_ndcg
-            best_features = features
-            best_iterations = iterations
+    valid_recs, mean_ndcg = evaluate_with_recall('ImplicitMF', algo, downsampled_train_data, validation_data)
+    results.append({'features': f, 'Mean Recall': mean_ndcg})
+
+    if mean_ndcg > best_mean_ndcg:
+        best_mean_ndcg = mean_ndcg
+        best_f = f
 
 print("Results:")
 for result in results:
-    print(f"Features = {result['Features']}, Iterations = {result['Iterations']}: Mean nDCG = {result['Mean nDCG']:.4f}")
+    print(f"features = {result['features']}: Mean Recall = {result['Mean Recall']:.4f}")
 
-print(f"\nBest Features: {best_features}, Best Iterations: {best_iterations} (Mean nDCG = {best_mean_ndcg:.4f})")
+print(f"\nBest f: {best_f} (Mean Recall = {best_mean_ndcg:.4f})")
+
 
 # Fit the algorithm on the full training data with the best features
-final_algo  = BiasedMF(features= best_features, iterations=best_iterations, reg=0.1, damping=0, bias=False, method='cd', rng_spec=42)
-# Use evaluate_with_ndcg to get recommendations and mean nDCG
-final_recs, mean_ndcg = evaluate_with_ndcg('ALS', final_algo, downsampled_train_data, final_test_data)
+final_algo = ImplicitMF(features=best_f, iterations=10, reg=0.1)
 
-print(f"NDCG mean for test set: {mean_ndcg:.4f}")
+# Use evaluate_with_ndcg to get recommendations and mean Recall
+final_recs, mean_ndcg = evaluate_with_recall('ImplicitMF', final_algo, downsampled_train_data, final_test_data)
+
+print(f"Recall mean for test set: {mean_ndcg:.4f}")
 
 #################################################
 ndcg_value = mean_ndcg
-key_name = "biasedmf_grocery_and_gourmet_food"
+key_name = "implicitmf_goodreads_poetry_recall10"
 
 from filelock import FileLock
 import os

@@ -53,12 +53,10 @@ def load_json_data(file_path, chunksize=10000):
     return pd.concat(chunks, ignore_index=True)
 
 # Load and preprocess ratings data
-file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
+file_path = 'Video_Games_5.json.gz'
 ratings = load_json_data(file_path)
-
 ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
-
 # Convert 'rating' column to float
 ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
@@ -113,26 +111,25 @@ print("Number of duplicate rows after cleaning:", duplicate_rows)
 duplicate_ratings = ratings.duplicated(subset=['user', 'item']).sum()
 print("Number of duplicate ratings (same user, same item) after cleaning:", duplicate_ratings)
 
-# 10-core pruning
-def prune_10_core(data):
+# 5-core pruning
+def prune_5_core(data):
     while True:
-        # Filter users with fewer than 10 interactions
+        # Filter users with fewer than 5 interactions
         user_counts = data['user'].value_counts()
-        valid_users = user_counts[user_counts >= 10].index
+        valid_users = user_counts[user_counts >= 5].index
         data = data[data['user'].isin(valid_users)]
 
-        # Filter items with fewer than 10 interactions
+        # Filter items with fewer than 5 interactions
         item_counts = data['item'].value_counts()
-        valid_items = item_counts[item_counts >= 10].index
+        valid_items = item_counts[item_counts >= 5].index
         data = data[data['item'].isin(valid_items)]
 
         # Check if no more pruning is needed
-        if all(user_counts >= 10) and all(item_counts >= 10):
+        if all(user_counts >= 5) and all(item_counts >= 5):
             break
     return data
 
-# Apply 10-core pruning
-ratings = prune_10_core(ratings)
+ratings = prune_5_core(ratings) 
 
 # Inspect the pruned ratings data
 print("\nAfter Pruning:")
@@ -279,7 +276,7 @@ print(f"NDCG mean for test set: {mean_ndcg:.4f}")
 
 #################################################
 ndcg_value = mean_ndcg
-key_name = "biasedmf_grocery_and_gourmet_food"
+key_name = "biasedmf_video_games_5core"
 
 from filelock import FileLock
 import os
