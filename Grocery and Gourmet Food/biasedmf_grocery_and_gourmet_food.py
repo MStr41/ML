@@ -56,7 +56,7 @@ def load_json_data(file_path, chunksize=10000):
 file_path = 'Grocery_and_Gourmet_Food_5.json.gz'
 ratings = load_json_data(file_path)
 
-ratings = ratings.rename(columns={'reviewerID': 'user_id', 'asin': 'item_id', 'overall': 'rating'})
+ratings = ratings.rename(columns={'reviewerID': 'user', 'asin': 'item', 'overall': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 
 # Convert 'rating' column to float
