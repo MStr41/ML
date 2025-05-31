@@ -3,31 +3,31 @@ import json
 import os
 
 # Python executable path of the conda environment
-env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
+env_python = '/home/frederic/PycharmProjects/Bachelor/venv/bin/python'
 
 # List of script files to run
 script_paths = [
-    "bias_beauty_products.py",
-    "biasedmf_beauty_products.py",
-    "bpr_beauty_products.py",
-    "ease_beauty_products.py",
-    "funksvd_beauty_products.py",
-    "implicitmf_beauty_products.py",
-    "itemknn_lenskit_beauty_products.py",
-    "itemknn_recpack_beauty_products.py",
-    "kunn_beauty_products.py",
-    "nmf_beauty_products.py",
-    "popular_beauty_products.py",
-    "popularity_beauty_products.py",
-    "random_beauty_products.py",
-    "slim_beauty_products.py",
-    "svd_beauty_products.py",
-    "svditemtoitem_beauty_products.py",
-    "userknn_beauty_products.py"
+    #"bias_beauty_products.py",
+    #"biasedmf_beauty_products.py",
+    #"bpr_beauty_products.py",
+    #"ease_beauty_products.py",
+    #"funksvd_beauty_products.py",
+    #"implicitmf_beauty_products.py",
+    #"itemknn_lenskit_beauty_products.py",
+    #"itemknn_recpack_beauty_products.py",
+    #"kunn_beauty_products.py",
+    #"nmf_beauty_products.py",
+    #"popular_beauty_products.py",
+    #"popularity_beauty_products.py",
+    #"random_beauty_products.py",
+    #"slim_beauty_products.py",
+    "svd_beauty_products.py"
+    #"svditemtoitem_beauty_products.py",
+    #"userknn_beauty_products.py"
 ]
 
 # Fractions to try: 0.1, 0.2, ..., 1.0
-fraction_values = [round(i * 0.1, 1) for i in range(1, 11)]
+fraction_values = [round(i * 0.1, 1) for i in range(6, 11)]
 
 # Loop over scripts
 for script_path in script_paths:

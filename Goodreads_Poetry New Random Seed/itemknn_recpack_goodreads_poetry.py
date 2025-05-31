@@ -9,16 +9,17 @@ import gzip
 import json
 from recpack.preprocessing.preprocessors import DataFramePreprocessor
 
+# Function to load the JSON data
+def load_json_data(file_path, chunksize=10000):
+    chunks = pd.read_json(file_path, lines=True, compression='gzip', chunksize=chunksize)
+    return pd.concat(chunks, ignore_index=True)
 # Set random seed for reproducibility
 np.random.seed(42)
 # Load and preprocess ratings data
-file_path = r'Book_Crossing_Dataset/BX-Book-Ratings.csv'
-ratings = pd.read_csv('Book_Crossing_Dataset/BX-Book-Ratings.csv', sep=';', encoding='latin-1',
-                      usecols=['User-ID', 'ISBN', 'Book-Rating'])
-
-
-# Rename columns to match RecPack expectations
-ratings = ratings.rename(columns={'User-ID': 'user_id', 'ISBN': 'item_id', 'Book-Rating': 'rating'})
+file_path = 'goodreads_reviews_poetry.json.gz'
+ratings = load_json_data(file_path)
+print(len(ratings))
+ratings = ratings.rename(columns={'user_id': 'user_id', 'book_id': 'item_id', 'rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 
 # Convert 'rating' column to float
@@ -26,7 +27,7 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user_id', 'item_id', 'rating']]
 print(ratings.head())
-
+print(len(ratings))
 
 # Convert user and item IDs to integers
 ratings['user_id'], user_index = pd.factorize(ratings['user_id'])
@@ -77,24 +78,25 @@ print("Number of duplicate ratings (same user, same item) after cleaning:", dupl
 
 print(len(ratings))
 
-def prune_5_core(data):
+# 10-core pruning
+def prune_10_core(data):
     while True:
-        # Filter users with fewer than 5 interactions
+        # Filter users with fewer than 10 interactions
         user_counts = data['user_id'].value_counts()
-        valid_users = user_counts[user_counts >= 5].index
+        valid_users = user_counts[user_counts >= 10].index
         data = data[data['user_id'].isin(valid_users)]
 
-        # Filter items with fewer than 5 interactions
+        # Filter items with fewer than 10 interactions
         item_counts = data['item_id'].value_counts()
-        valid_items = item_counts[item_counts >= 5].index
+        valid_items = item_counts[item_counts >= 10].index
         data = data[data['item_id'].isin(valid_items)]
 
         # Check if no more pruning is needed
-        if all(user_counts >= 5) and all(item_counts >= 5):
+        if all(user_counts >= 10) and all(item_counts >= 10):
             break
     return data
-
-ratings = prune_5_core(ratings)
+# Apply 10-core pruning
+ratings = prune_10_core(ratings)
 
 print(len(ratings))
 
@@ -186,7 +188,10 @@ pipeline_builder.set_validation_data((downsampled_train_interactions, valid_inte
 
 # Add ItemKNN algorithm with hyperparameter ranges for optimization
 pipeline_builder.add_algorithm(
-    'SLIM'
+    'ItemKNN',
+    grid={
+        'K': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200],  # Range of K values for optimization
+    }
 )
 
 # Set NDCGK as the optimization metric to evaluate at K=10
@@ -208,15 +213,13 @@ metric_results = pipeline.get_metrics()
 print("Metric Results:")
 print(metric_results)
 
-"""
 # Print the best hyperparameters
 print("Best Hyperparameters:")
 print(pipeline.optimisation_results)
-"""
 
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "slim_book_crossing_prune5"
+key_name = "itemknn_recpack_goodreads_poetry"
 
 from filelock import FileLock
 import os

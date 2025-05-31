@@ -80,14 +80,14 @@ print(len(ratings))
 def prune_5_core(data):
     while True:
         # Filter users with fewer than 5 interactions
-        user_counts = data['user'].value_counts()
+        user_counts = data['user_id'].value_counts()
         valid_users = user_counts[user_counts >= 5].index
-        data = data[data['user'].isin(valid_users)]
+        data = data[data['user_id'].isin(valid_users)]
 
         # Filter items with fewer than 5 interactions
-        item_counts = data['item'].value_counts()
+        item_counts = data['item_id'].value_counts()
         valid_items = item_counts[item_counts >= 5].index
-        data = data[data['item'].isin(valid_items)]
+        data = data[data['item_id'].isin(valid_items)]
 
         # Check if no more pruning is needed
         if all(user_counts >= 5) and all(item_counts >= 5):

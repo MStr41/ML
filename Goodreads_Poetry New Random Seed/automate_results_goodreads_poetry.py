@@ -3,20 +3,20 @@ import json
 import os
 
 # Python executable path of the conda environment
-env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
+env_python = '/home/frederic/PycharmProjects/Bachelor/venv/bin/python'
 
 # List of script files to run
 script_paths = [
-    "bias_goodreads_poetry",
-    "biasedmf_goodreads_poetry",
-    "bpr_goodreads_poetry",
+    "bias_goodreads_poetry.py",
+    #"biasedmf_goodreads_poetry",
+    "bpr_goodreads_poetry.py",
     "ease_goodreads_poetry.py",
     "funksvd_goodreads_poetry.py",
     "implicitmf_goodreads_poetry.py",
     "itemknn_lenskit_goodreads_poetry.py",
     "itemknn_recpack_goodreads_poetry.py",
     "kunn_goodreads_poetry.py",
-    "nmf_goodreads_poetry.py",
+    #"nmf_goodreads_poetry.py",
     "popular_goodreads_poetry.py",
     "popularity_goodreads_poetry.py",
     "random_goodreads_poetry.py",

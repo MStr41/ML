@@ -10,15 +10,13 @@ import json
 from recpack.preprocessing.preprocessors import DataFramePreprocessor
 
 # Set random seed for reproducibility
-np.random.seed(42)
+np.random.seed(123)
 # Load and preprocess ratings data
-file_path = r'Book_Crossing_Dataset/BX-Book-Ratings.csv'
-ratings = pd.read_csv('Book_Crossing_Dataset/BX-Book-Ratings.csv', sep=';', encoding='latin-1',
-                      usecols=['User-ID', 'ISBN', 'Book-Rating'])
+file_path = r'beauty_products_dataset/beauty_products_dataset.csv'
+ratings = pd.read_csv(file_path, sep=',', encoding='latin-1',
+                      usecols=['UserId', 'ProductId', 'Rating'])
 
-
-# Rename columns to match RecPack expectations
-ratings = ratings.rename(columns={'User-ID': 'user_id', 'ISBN': 'item_id', 'Book-Rating': 'rating'})
+ratings = ratings.rename(columns={'UserId': 'user_id', 'ProductId': 'item_id', 'Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 
 # Convert 'rating' column to float
@@ -26,7 +24,6 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user_id', 'item_id', 'rating']]
 print(ratings.head())
-
 
 # Convert user and item IDs to integers
 ratings['user_id'], user_index = pd.factorize(ratings['user_id'])
@@ -77,24 +74,25 @@ print("Number of duplicate ratings (same user, same item) after cleaning:", dupl
 
 print(len(ratings))
 
-def prune_5_core(data):
+# 10-core pruning
+def prune_10_core(data):
     while True:
-        # Filter users with fewer than 5 interactions
+        # Filter users with fewer than 10 interactions
         user_counts = data['user_id'].value_counts()
-        valid_users = user_counts[user_counts >= 5].index
+        valid_users = user_counts[user_counts >= 10].index
         data = data[data['user_id'].isin(valid_users)]
 
-        # Filter items with fewer than 5 interactions
+        # Filter items with fewer than 10 interactions
         item_counts = data['item_id'].value_counts()
-        valid_items = item_counts[item_counts >= 5].index
+        valid_items = item_counts[item_counts >= 10].index
         data = data[data['item_id'].isin(valid_items)]
 
         # Check if no more pruning is needed
-        if all(user_counts >= 5) and all(item_counts >= 5):
+        if all(user_counts >= 10) and all(item_counts >= 10):
             break
     return data
-
-ratings = prune_5_core(ratings)
+# Apply 10-core pruning
+ratings = prune_10_core(ratings)
 
 print(len(ratings))
 
@@ -122,7 +120,7 @@ print("Number of unique items after ensuring no empty rows or columns:", len(int
 # therefore the split ratio won't be exactly 80-20 anymore, so I adjusted the split ratio manually to make sure the 80-20 ratio is correctly maintained)
 # 0.229
 test_valid_fraction = 0.229
-weak_gen_scenario = WeakGeneralization(frac_data_in=1 - test_valid_fraction, validation=False, seed=42)
+weak_gen_scenario = WeakGeneralization(frac_data_in=1 - test_valid_fraction, validation=False, seed=123)
 
 # Split the data
 weak_gen_scenario.split(interaction_matrix)
@@ -139,7 +137,7 @@ print("Number of unique items in training set:", len(train_interactions.active_i
 
 # Splitting test_valid set from each other (Again, fraction value is slightly different to maintatin the 50-50 split ration in this case correctly (due to rounding up effect))
 # 0.40
-test_valid_scenario = WeakGeneralization(frac_data_in=0.40, validation=False, seed=42)
+test_valid_scenario = WeakGeneralization(frac_data_in=0.40, validation=False, seed=123)
 
 # Split the data
 test_valid_scenario.split(test_valid_interactions)
@@ -164,7 +162,7 @@ except (IndexError, ValueError):
     fraction_value = 0.7
 downsample_fraction = fraction_value
 ##########################################################################
-additional_split_scenario = WeakGeneralization(frac_data_in=downsample_fraction, validation=False, seed=42)
+additional_split_scenario = WeakGeneralization(frac_data_in=downsample_fraction, validation=False, seed=123)
 additional_split_scenario.split(train_interactions)
 
 # Downsampled train+validation set
@@ -186,7 +184,7 @@ pipeline_builder.set_validation_data((downsampled_train_interactions, valid_inte
 
 # Add ItemKNN algorithm with hyperparameter ranges for optimization
 pipeline_builder.add_algorithm(
-    'SLIM'
+    'KUNN'
 )
 
 # Set NDCGK as the optimization metric to evaluate at K=10
@@ -216,7 +214,7 @@ print(pipeline.optimisation_results)
 
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "slim_book_crossing_prune5"
+key_name = "kunn_beauty_products_newRandom"
 
 from filelock import FileLock
 import os

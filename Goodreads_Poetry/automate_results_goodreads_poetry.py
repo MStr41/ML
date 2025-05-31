@@ -3,27 +3,28 @@ import json
 import os
 
 # Python executable path of the conda environment
-env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
+env_python = '/home/frederic/PycharmProjects/Bachelor/venv/bin/python'
 
 # List of script files to run
 script_paths = [
-    "bias_goodreads_poetry",
-    "biasedmf_goodreads_poetry",
-    "bpr_goodreads_poetry",
-    "ease_goodreads_poetry.py",
-    "funksvd_goodreads_poetry.py",
-    "implicitmf_goodreads_poetry.py",
-    "itemknn_lenskit_goodreads_poetry.py",
-    "itemknn_recpack_goodreads_poetry.py",
-    "kunn_goodreads_poetry.py",
-    "nmf_goodreads_poetry.py",
-    "popular_goodreads_poetry.py",
-    "popularity_goodreads_poetry.py",
-    "random_goodreads_poetry.py",
-    "slim_goodreads_poetry.py",
-    "svd_goodreads_poetry.py",
-    "svditemtoitem_goodreads_poetry.py",
-    "userknn_goodreads_poetry.py"
+    "bias_book_crossing.py",
+    #"biasedmf_book_crossing.py",
+    "bpr_book_crossing.py",
+    "BX_ItemKNN.py",
+    "ease_book_crossing.py",
+    "funksvd_book_crossing.py",
+    "implicitmf_book_crossing.py",
+    "itemknn_recpack_book_crossing.py",
+    "kunn_book_crossing.py",
+    #"nmf_book_crossing.py",
+    "popular_book_crossing.py",
+    "popularity_book_crossing.py",
+    "random_book_crossing.py",
+    "slim_book_crossing.py",
+    "SVD_Book_Crossing.py",
+    "svditemtoitem_book_crossing.py",
+    "userknn_book_crossing.py"
+
 ]
 
 # Fractions to try: 0.1, 0.2, ..., 1.0

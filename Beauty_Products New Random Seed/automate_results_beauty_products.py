@@ -3,12 +3,12 @@ import json
 import os
 
 # Python executable path of the conda environment
-env_python = r"C:\Users\murat\miniconda3\envs\lenskitenv\python.exe"
+env_python = '/home/frederic/PycharmProjects/Bachelor/venv/bin/python'
 
 # List of script files to run
 script_paths = [
     "bias_beauty_products.py",
-    "biasedmf_beauty_products.py",
+    #"biasedmf_beauty_products.py",
     "bpr_beauty_products.py",
     "ease_beauty_products.py",
     "funksvd_beauty_products.py",
@@ -16,7 +16,7 @@ script_paths = [
     "itemknn_lenskit_beauty_products.py",
     "itemknn_recpack_beauty_products.py",
     "kunn_beauty_products.py",
-    "nmf_beauty_products.py",
+    #"nmf_beauty_products.py",
     "popular_beauty_products.py",
     "popularity_beauty_products.py",
     "random_beauty_products.py",

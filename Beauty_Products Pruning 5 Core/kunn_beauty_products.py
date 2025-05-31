@@ -12,13 +12,11 @@ from recpack.preprocessing.preprocessors import DataFramePreprocessor
 # Set random seed for reproducibility
 np.random.seed(42)
 # Load and preprocess ratings data
-file_path = r'Book_Crossing_Dataset/BX-Book-Ratings.csv'
-ratings = pd.read_csv('Book_Crossing_Dataset/BX-Book-Ratings.csv', sep=';', encoding='latin-1',
-                      usecols=['User-ID', 'ISBN', 'Book-Rating'])
+file_path = r'beauty_products_dataset/beauty_products_dataset.csv'
+ratings = pd.read_csv(file_path, sep=',', encoding='latin-1',
+                      usecols=['UserId', 'ProductId', 'Rating'])
 
-
-# Rename columns to match RecPack expectations
-ratings = ratings.rename(columns={'User-ID': 'user_id', 'ISBN': 'item_id', 'Book-Rating': 'rating'})
+ratings = ratings.rename(columns={'UserId': 'user_id', 'ProductId': 'item_id', 'Rating': 'rating'})
 ratings = ratings.dropna(subset=['rating'])
 
 # Convert 'rating' column to float
@@ -26,7 +24,6 @@ ratings['rating'] = ratings['rating'].astype(float)
 # Keep only the necessary columns
 ratings = ratings[['user_id', 'item_id', 'rating']]
 print(ratings.head())
-
 
 # Convert user and item IDs to integers
 ratings['user_id'], user_index = pd.factorize(ratings['user_id'])
@@ -186,7 +183,7 @@ pipeline_builder.set_validation_data((downsampled_train_interactions, valid_inte
 
 # Add ItemKNN algorithm with hyperparameter ranges for optimization
 pipeline_builder.add_algorithm(
-    'SLIM'
+    'KUNN'
 )
 
 # Set NDCGK as the optimization metric to evaluate at K=10
@@ -216,7 +213,7 @@ print(pipeline.optimisation_results)
 
 #################################################
 ndcg_value = metric_results["NDCGK_10"].values[0]
-key_name = "slim_book_crossing_prune5"
+key_name = "kunn_beauty_products_prune5"
 
 from filelock import FileLock
 import os
