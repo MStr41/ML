@@ -25,7 +25,7 @@ all_exist2 = all(os.path.exists(f'rmse{x_values}_f{x_values}.csv') for x in x_va
 
 
 
-if 1==1:# not(all_exist and all_exist2):
+if 0==1:# not(all_exist and all_exist2):
 
     
 
@@ -128,20 +128,20 @@ for sp in [48, 96, 192, 672, 1344]:
     for k in [48, 96, 192, 672, 1344]:
         #print(sp)
         #print(k)
-        mape_read = pd.read_csv(f'ExponentialSmoothingDatas/mape{sp}_f{k}.csv', delimiter=",")
-        rmse_read = pd.read_csv(f'ExponentialSmoothingDatas/rmse{sp}_f{k}.csv', delimiter=",")
+        mape_read = pd.read_csv(f'mape{sp}_f{k}.csv', delimiter=",")
+        rmse_read = pd.read_csv(f'rmse{sp}_f{k}.csv', delimiter=",")
 
         print(mape_read)
         #print(rmse_read)
 
         
-        plt.plot(mape_read.columns, mape_read.iloc[0], label= f'Mape_f{k}',linestyle='-')
-        plt.plot(rmse_read.columns, rmse_read.iloc[0], label= f'RMSE_f{k}', linestyle='-')
+        plt.plot(mape_read.columns, mape_read.iloc[0], label= f'Mape_f{k}', marker='o')
+        plt.plot(rmse_read.columns, rmse_read.iloc[0], label= f'RMSE_f{k}', marker='o')
         plt.xlabel('Downsampling in Prozent')
         plt.ylabel('Loss (RMSE & MAPE)')
-        plt.title('Trainings- und Validierungsverlust')
+        plt.title(f'Trainings- und Validierungsverlust_{sp}')
         plt.legend()
-        plt.yticks(np.arange(0,5,0.1))
+        plt.yticks(np.arange(0,15,1))
         plt.grid(True)
         plt.tight_layout()
         plt.savefig(fname=f'ExponentialSmoothing_{sp}')
