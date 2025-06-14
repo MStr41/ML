@@ -86,7 +86,7 @@ if 0==1:# not(all_exist and all_exist2):
 
                 # Vorhersage für 1000 Schritte (~10 Tage)
                 forecast = model.forecast(k)
-                forecast.to_csv(f'forecast{sp}_f{k}_d{i}.csv', index=True)
+                forecast.to_csv(f'ExponentialSmoothingDatas/forecast{sp}_f{k}_d{i}.csv', index=True)
 
                 #last_time = train_df.index[-1]
                 #forecast.index = pd.date_range(start=last_time + pd.Timedelta(minutes=15), periods=1344, freq='15min')
@@ -118,8 +118,8 @@ if 0==1:# not(all_exist and all_exist2):
             print(mape_collect)
             print(rmse_collect)
 
-            mape_collect.to_csv(f'mape{sp}_f{k}.csv', index=True)
-            rmse_collect.to_csv(f'rmse{sp}_f{k}.csv', index=True)
+            mape_collect.to_csv(f'ExponentialSmoothingDatas/mape{sp}_f{k}.csv', index=True)
+            rmse_collect.to_csv(f'ExponentialSmoothingDatas/rmse{sp}_f{k}.csv', index=True)
 
 # Fehlerverlauf über die Zeit plotten
 
@@ -128,11 +128,11 @@ for sp in [48, 96, 192, 672, 1344]:
     for k in [48, 96, 192, 672, 1344]:
         #print(sp)
         #print(k)
-        mape_read = pd.read_csv(f'mape{sp}_f{k}.csv', delimiter=",")
-        rmse_read = pd.read_csv(f'rmse{sp}_f{k}.csv', delimiter=",")
+        mape_read = pd.read_csv(f'ExponentialSmoothingDatas/mape{sp}_f{k}.csv', delimiter=",")
+        rmse_read = pd.read_csv(f'ExponentialSmoothingDatas/rmse{sp}_f{k}.csv', delimiter=",")
 
-        print(mape_read)
-        #print(rmse_read)
+        #print(mape_read)
+        print(rmse_read)
 
         
         plt.plot(mape_read.columns, mape_read.iloc[0], label= f'Mape_f{k}', marker='o')
@@ -144,7 +144,7 @@ for sp in [48, 96, 192, 672, 1344]:
         plt.yticks(np.arange(0,15,1))
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(fname=f'ExponentialSmoothing_{sp}')
+        plt.savefig(fname=f'ExponentialSmoothingDatas/ExponentialSmoothing_{sp}_v1')
         plt.show(block=False)
         plt.pause(1)
 
