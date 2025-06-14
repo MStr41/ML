@@ -52,7 +52,9 @@ all_val_losses_mean = pd.DataFrame()
 path_csv_loss = os.path.join(directory, 'csv_loss2.csv')
 path_csv_val_loss = os.path.join(directory, 'csv_val_loss2.csv')
 
-if 1==1:#(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
+deepLearningDatasFolder = "DeepLearningDatas2"
+
+if 0==1:#(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
 
     for i in range(1, 11, 1):
 
@@ -68,7 +70,7 @@ if 1==1:#(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
             print(i)
 
             nameModell = "DeepLearning2" + f"household_power_consumption.csv_d{i}_v{j}_v2" + ".keras"
-            deepLearningDatasFolder = "DeepLearningDatas2"
+            
             pathFolder = os.path.join(directory, os.path.join(deepLearningDatasFolder, nameModell))
 
             #print('------------------')
