@@ -54,14 +54,14 @@ if 0==1:# not(all_exist and all_exist2):
     #rmse_ = pd.DataFrame()
     print(data.index.to_series().diff().value_counts())
 
-    for sp in [60, 1440, 10080]:
+    for sp in [15, 60, 1440]:
         for k in [15, 60, 1440, 10080]:
             mape_collect = pd.DataFrame()
             rmse_collect = pd.DataFrame()
             for i in range(1, 11, 1):
 
                 #Downsampling
-                percent = i/10
+                percent = i/50
                 print(len(data))
                 downSampling = int(len(data) * percent)
                 dataDownSampling = data.iloc[:downSampling]
@@ -82,7 +82,7 @@ if 0==1:# not(all_exist and all_exist2):
 
                 # Vorhersage für 1000 Schritte (~10 Tage)
                 forecast = model.forecast(k)
-                forecast.to_csv(f'forecast{sp}_f{k}_d{i}_v2.csv', index=True)
+                forecast.to_csv(f'ExponentialSmoothingDatas2/forecast{sp}_f{k}_d{i}_v2.csv', index=True)
 
                 #last_time = train_df.index[-1]
                 #forecast.index = pd.date_range(start=last_time + pd.Timedelta(minutes=15), periods=1344, freq='15min')
@@ -114,8 +114,8 @@ if 0==1:# not(all_exist and all_exist2):
             print(mape_collect)
             print(rmse_collect)
 
-            mape_collect.to_csv(f'mape{sp}_f{k}_v2.csv', index=True)
-            rmse_collect.to_csv(f'rmse{sp}_f{k}_v2.csv', index=True)
+            mape_collect.to_csv(f'ExponentialSmoothingDatas2/mape{sp}_f{k}_v2.csv', index=True)
+            rmse_collect.to_csv(f'ExponentialSmoothingDatas2/rmse{sp}_f{k}_v2.csv', index=True)
 
 # Fehlerverlauf über die Zeit plotten
 
@@ -140,7 +140,7 @@ for sp in [15, 60, 1440]:
         plt.yticks(np.arange(0,15,1))
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(fname=f'ExponentialSmoothing_{sp}_v2')
+        plt.savefig(fname=f'ExponentialSmoothingDatas2/ExponentialSmoothing_{sp}_v2')
         plt.show(block=False)
         plt.pause(1)
 
