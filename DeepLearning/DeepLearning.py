@@ -36,9 +36,7 @@ data = data.dropna(subset=['value'])
 #Datei bearbeiten
 data['value'] = pd.to_numeric(data['value'], errors='coerce')
 data = data.dropna(subset=['value'])
-nameModell = "DeepLearning" + "time_series_15min_singleindex.csv" + ".keras"
-deepLearningDatasFolder = "DeepLearningDatas"
-pathFolder = os.path.join(directory, os.path.join(deepLearningDatasFolder, nameModell))
+
 print(data['time'])
 #Zeitstempel in numerische Werte umwandeln, falls sie noch nicht im richtigen Format sind
 data['time'] = pd.to_datetime(data['time'])
@@ -52,7 +50,9 @@ all_val_losses_mean = pd.DataFrame()
 path_csv_loss = os.path.join(directory, 'csv_loss.csv')
 path_csv_val_loss = os.path.join(directory, 'csv_val_loss.csv')
 
-if 1==1:#not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
+deepLearningDatasFolder = "DeepLearningDatas"
+
+if 0==1:#not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
 
     for i in range(1, 11, 1):
 
@@ -68,6 +68,11 @@ if 1==1:#not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)
 
         for j in [42, 24, 1, 10, 100]:
             print(percent)
+
+            nameModell = "DeepLearning" + f"time_series_15min_singleindex.csv_d{i}_v{j}_v1" + ".keras"
+            
+            pathFolder = os.path.join(directory, os.path.join(deepLearningDatasFolder, nameModell))
+
             # Feature und Ziel trennen
             X = dataDownSampling[['time', 'value']].iloc[:-1].values
             y = dataDownSampling['value'].iloc[1:].values
@@ -133,7 +138,7 @@ if 1==1:#not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)
                     prediction_scaled = model.predict(X_test)
                     prediction = scaler_y.inverse_transform(prediction_scaled)
                     df = pd.DataFrame(prediction)
-                    df.to_csv(f'{deepLearningDatasFolder}/predictionDeeplearning_d{i}_v{j}.csv', index=True)
+                    df.to_csv(f'{deepLearningDatasFolder}/predictionDeeplearning_d{i}_v{j}_v1.csv', index=True)
 
                     all_losses = pd.DataFrame(history.history['loss'])
                     all_val_losses = pd.DataFrame(history.history['val_loss'])
@@ -180,7 +185,7 @@ for k in range(0,2,1):
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(fname=f'{deepLearningDatasFolder}/Trainings- und Validierungsverlust_{k}')
+        plt.savefig(fname=f'{deepLearningDatasFolder}/Trainings- und Validierungsverlust_{k}_v1')
         plt.show(block=False)
         plt.pause(0.1)
 
