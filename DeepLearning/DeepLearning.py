@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+ï»¿# -*- coding: utf-8 -*-
 
 from importlib.abc import FileLoader
 from msilib import Directory
@@ -37,20 +37,22 @@ data = data.dropna(subset=['value'])
 data['value'] = pd.to_numeric(data['value'], errors='coerce')
 data = data.dropna(subset=['value'])
 nameModell = "DeepLearning" + "time_series_15min_singleindex.csv" + ".keras"
-pathFolder = os.path.join(directory, nameModell)
-
+deepLearningDatasFolder = "DeepLearningDatas"
+pathFolder = os.path.join(directory, os.path.join(deepLearningDatasFolder, nameModell))
+print(data['time'])
 #Zeitstempel in numerische Werte umwandeln, falls sie noch nicht im richtigen Format sind
 data['time'] = pd.to_datetime(data['time'])
+print(data['time'])
 data['time'] = data['time'].astype(np.int64) // 10**6
+print(data['time'])
 
-
-k = 5
+#k = 5
 all_losses_mean = pd.DataFrame()
 all_val_losses_mean = pd.DataFrame()
 path_csv_loss = os.path.join(directory, 'csv_loss.csv')
 path_csv_val_loss = os.path.join(directory, 'csv_val_loss.csv')
 
-if not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
+if 1==1:#not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
 
     for i in range(1, 11, 1):
 
@@ -64,7 +66,7 @@ if not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
         all_losses_collect = pd.DataFrame()
         all_val_losses_collect = pd.DataFrame()
 
-        for j in range(0,k,1):
+        for j in [42, 24, 1, 10, 100]:
             print(percent)
             # Feature und Ziel trennen
             X = dataDownSampling[['time', 'value']].iloc[:-1].values
@@ -74,13 +76,13 @@ if not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X)
 
-            y = y.reshape(-1, 1)  #falls nötig
+            y = y.reshape(-1, 1)  #falls nï¿½tig
             scaler_y = StandardScaler()
             y_scaled = scaler_y.fit_transform(y)
 
 
             #Train- und Testdaten
-            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(X_scaled, y_scaled, test_size=0.2, random_state=j)
 
             @register_keras_serializable()
             def rmse_loss(y_true, y_pred):
@@ -89,6 +91,7 @@ if not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
             if 0==1:#os.path.exists(pathFolder):
 
                     #loadModel = load_model(pathFolderPlusDatei)
+                    print('hello')
                     loadModel = load_model(pathFolder, custom_objects={'rmse_loss': rmse_loss})
                     prediction = loadModel.predict(X_test)
 
@@ -123,8 +126,14 @@ if not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
                     #Modell trainieren
                     history  = model.fit(data_generator(2048,X_train, y_train), epochs = 128, validation_data = (X_test, y_test), steps_per_epoch = len(X_train) // 2048, callbacks=[early_stopping])
 
+                    #Modell speichern
+                    model.save(pathFolder)
 
-                    
+                        #Vorhersage
+                    prediction_scaled = model.predict(X_test)
+                    prediction = scaler_y.inverse_transform(prediction_scaled)
+                    df = pd.DataFrame(prediction)
+                    df.to_csv(f'{deepLearningDatasFolder}/predictionDeeplearning_d{i}_v{j}.csv', index=True)
 
                     all_losses = pd.DataFrame(history.history['loss'])
                     all_val_losses = pd.DataFrame(history.history['val_loss'])
@@ -148,22 +157,13 @@ if not(os.path.exists(path_csv_loss) and os.path.exists(path_csv_val_loss)):
         print(all_val_losses_mean)
 
 
-
-            #Modell speichern
-            #model.save(pathFolder)
-
-            #Vorhersage
-            #prediction_scaled = model.predict(X_test)
-            #prediction = scaler_y.inverse_transform(prediction_scaled)
-
-            
     #Daten in CSV-Datei speichern
-    all_losses_mean.to_csv('csv_loss.csv', index=True)
-    all_val_losses_mean.to_csv('csv_val_loss.csv', index=True)
+    all_losses_mean.to_csv(f'{deepLearningDatasFolder}/csv_loss.csv', index=True)
+    all_val_losses_mean.to_csv(f'{deepLearningDatasFolder}/csv_val_loss.csv', index=True)
 
     
-csv_loss = pd.read_csv('csv_loss.csv', delimiter=",")
-csv_val_loss = pd.read_csv('csv_val_loss.csv', delimiter=",")
+csv_loss = pd.read_csv(f'{deepLearningDatasFolder}/csv_loss.csv', delimiter=",")
+csv_val_loss = pd.read_csv(f'{deepLearningDatasFolder}/csv_val_loss.csv', delimiter=",")
 
 #Plotten von loss und val_loss
 
@@ -180,7 +180,7 @@ for k in range(0,2,1):
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(fname=f'Trainings- und Validierungsverlust_{k}')
+        plt.savefig(fname=f'{deepLearningDatasFolder}/Trainings- und Validierungsverlust_{k}')
         plt.show(block=False)
         plt.pause(0.1)
 
